@@ -6,3 +6,15 @@
 npm install
 npm run dev
 ```
+
+## Build
+
+```bash
+npm run build
+```
+
+## Scripts
+
+-   dev – start Vite dev server
+-   build – production build
+-   preview – preview production build locally
