@@ -1,3 +1,5 @@
+![Backend CI](https://github.com/ArchILLtect/sameboat-frontend/actions/workflows/backend-ci.yml/badge.svg)
+
 # SameBoat Frontend (Vite + React + TS)
 
 ## Dev
