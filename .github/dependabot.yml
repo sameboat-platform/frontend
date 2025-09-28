@@ -1,0 +1,28 @@
+version: 2
+updates:
+  # Keep npm packages up to date
+  - package-ecosystem: npm
+    directory: "/"           # location of package.json
+    schedule:
+      interval: weekly
+      day: sunday            # optional: choose a day
+      time: "05:00"          # optional: UTC time
+      timezone: "America/Chicago"
+    open-pull-requests-limit: 5
+    groups:                  # optional: group related bumps to reduce PR noise
+      vite-minors:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:                  # optional: avoid sudden breaking major bumps
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+  # Keep your GitHub Actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
