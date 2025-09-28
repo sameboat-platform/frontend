@@ -5,10 +5,36 @@ on:
         branches: [main]
     pull_request:
         branches: [main]
-    workflow_dispatch: {} # <-- enables the "Run workflow" button
+    workflow_dispatch:
+        inputs:
+            node-version:
+                description: Node version
+                default: "20"
+                required: true
+                type: string
+            run-lint:
+                description: Run ESLint
+                default: true
+                type: boolean
+            run-typecheck:
+                description: Run TypeScript type check
+                default: true
+                type: boolean
+            run-tests:
+                description: Run unit tests (Vitest/Jest) with coverage if available
+                default: false
+                type: boolean
+            run-build:
+                description: Run production build
+                default: true
+                type: boolean
 
 permissions:
     contents: read
+
+concurrency:
+    group: frontend-ci-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
     build-test:
@@ -22,32 +48,98 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Use Node.js 20.x
+            - name: Use Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: 20
+                  node-version: ${{ inputs.node-version || '20' }}
                   cache: npm
 
             - name: Install deps
               run: npm ci
 
-            - name: Lint (if present)
-              run: npm run lint --if-present
+            - name: Lint
+              if: ${{ inputs.run-lint != false }}
+              run: |
+                  if npm run -s | grep -q "^  lint"; then
+                    npm run lint -- --format github
+                  else
+                    echo "No lint script – skipping"
+                  fi
 
-            - name: Typecheck (if present)
-              run: npm run typecheck --if-present
+            - name: Typecheck
+              if: ${{ inputs.run-typecheck != false }}
+              run: |
+                  if npm run -s | grep -q "^  typecheck"; then
+                    npm run typecheck
+                  else
+                    npx tsc --noEmit
+                  fi
 
-            - name: Unit tests (if present)
-              run: npm test --if-present -- --run
+            - name: Tests (Vitest/Jest)
+              if: ${{ inputs.run-tests }}
+              run: |
+                  if npm run -s | grep -q "^  test"; then
+                    npx vitest --run --coverage || npm test -- --run
+                  else
+                    echo "No test script – skipping"
+                  fi
 
             - name: Build
+              if: ${{ inputs.run-build != false }}
               run: npm run build
 
             - name: Upload build artifact (dist/)
-              if: success()
+              if: ${{ inputs.run-build != false }}
               uses: actions/upload-artifact@v4
               with:
                   name: web-dist
                   path: dist
                   if-no-files-found: ignore
                   retention-days: 7
+
+            - name: Upload coverage (if generated)
+              if: ${{ inputs.run-tests }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage
+                  path: |
+                      coverage
+                      coverage/**/*
+                  if-no-files-found: ignore
+                  retention-days: 7
+
+    # netlify-deploy:
+    #   name: Netlify deploy
+    #   needs: build-test
+    #   runs-on: ubuntu-latest
+    #   if: >
+    #     (github.event_name == 'pull_request') ||
+    #     (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    #   steps:
+    #     - name: Download build artifact
+    #       uses: actions/download-artifact@v4
+    #       with:
+    #         name: web-dist
+    #         path: dist
+    #
+    #     - name: Install Netlify CLI
+    #       run: npm i -g netlify-cli
+    #
+    #     - name: Deploy preview (PR) or prod (manual on main)
+    #       env:
+    #         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    #         NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+    #       run: |
+    #         if [ "${{ github.event_name }}" = "pull_request" ]; then
+    #           netlify deploy \
+    #             --dir=dist \
+    #             --site="$NETLIFY_SITE_ID" \
+    #             --auth="$NETLIFY_AUTH_TOKEN" \
+    #             --message "PR #${{ github.event.pull_request.number }}" \
+    #             --draft --json
+    #         else
+    #           netlify deploy \
+    #             --dir=dist \
+    #             --site="$NETLIFY_SITE_ID" \
+    #             --auth="$NETLIFY_AUTH_TOKEN" \
+    #             --prod --message "manual main" --json

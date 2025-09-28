@@ -54,3 +54,7 @@ Pointers to key files
 -   `src/main.tsx`, `src/App.tsx`, `src/App.css`, `src/index.css`
 -   `package.json` (scripts), `vite.config.ts`, `tsconfig.*.json`, `eslint.config.js`
 -   `.github/workflows/frontend-ci.yml` (build pipeline)
+
+Migration context
+
+-   Repository moved from `ArchILLtect/sameboat-frontend` to `sameboat-platform/frontend`. Historical issue/PR references may use the old org prefix. Use the new path for badges, links, and cloning.

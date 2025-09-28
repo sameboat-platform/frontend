@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_BASE, api } from "../lib/api";
-
-// Health endpoint shape: prefer explicit field; allow passthrough unknown keys without using any
-type HealthResponse = {
-  status?: string;
-  [k: string]: unknown;
-};
+import { isHealthResponse } from "../lib/health";
 
 export default function Home() {
   const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
@@ -17,15 +12,15 @@ export default function Home() {
       try {
         // Expect your Spring Boot app to expose GET /health (or /actuator/health)
         // If you're using Actuator default, change to '/actuator/health'
-        const data = await api<HealthResponse>("/api/actuator/health");
+        const data = await api<unknown>("/api/actuator/health");
         if (ignore) return;
         setStatus("ok");
-        // try to surface a friendly message if available
-        setMessage(
-          typeof data.status === "string" && data.status.length > 0
-            ? `status: ${data.status}`
-            : "Backend responded ✔"
-        );
+        // Narrow & surface a friendly message if `status` provided
+        if (isHealthResponse(data) && typeof data.status === "string" && data.status.length > 0) {
+          setMessage(`status: ${data.status}`);
+        } else {
+          setMessage("Backend responded ✔");
+        }
       } catch (e) {
         const err = e instanceof Error ? e : undefined;
         if (ignore) return;
