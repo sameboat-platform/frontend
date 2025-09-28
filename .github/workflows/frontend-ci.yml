@@ -2,26 +2,52 @@ name: Frontend CI
 
 on:
     push:
-        branches: ["main"]
+        branches: [main]
     pull_request:
-        branches: ["main"]
+        branches: [main]
+    workflow_dispatch: {} # <-- enables the "Run workflow" button
+
+permissions:
+    contents: read
 
 jobs:
-    build:
+    build-test:
+        name: Build & test (Vite/React)
         runs-on: ubuntu-latest
+        timeout-minutes: 15
+        env:
+            CI: true
 
         steps:
-            - name: Checkout repository
+            - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Use Node.js
+            - name: Use Node.js 20.x
               uses: actions/setup-node@v4
               with:
                   node-version: 20
                   cache: npm
 
-            - name: Install dependencies
+            - name: Install deps
               run: npm ci
 
-            - name: Run build
+            - name: Lint (if present)
+              run: npm run lint --if-present
+
+            - name: Typecheck (if present)
+              run: npm run typecheck --if-present
+
+            - name: Unit tests (if present)
+              run: npm test --if-present -- --run
+
+            - name: Build
               run: npm run build
+
+            - name: Upload build artifact (dist/)
+              if: success()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: web-dist
+                  path: dist
+                  if-no-files-found: ignore
+                  retention-days: 7
