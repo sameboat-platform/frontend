@@ -1,4 +1,4 @@
-![Frontend CI](https://github.com/ArchILLtect/sameboat-frontend/actions/workflows/frontend-ci.yml/badge.svg)
+[![Frontend CI](https://github.com/sameboat-platform/frontend/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/sameboat-platform/frontend/actions/workflows/frontend-ci.yml)
 
 # SameBoat Frontend (Vite + React + TS)
 
