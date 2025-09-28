@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { API_BASE, api } from "../lib/api";
 
-type HealthResponse = { status?: string } | Record<string, unknown>;
+// Health endpoint shape: prefer explicit field; allow passthrough unknown keys without using any
+type HealthResponse = {
+  status?: string;
+  [k: string]: unknown;
+};
 
 export default function Home() {
   const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
@@ -18,14 +22,15 @@ export default function Home() {
         setStatus("ok");
         // try to surface a friendly message if available
         setMessage(
-          (data as any)?.status
-            ? `status: ${(data as any).status}`
+          typeof data.status === "string" && data.status.length > 0
+            ? `status: ${data.status}`
             : "Backend responded ✔"
         );
-      } catch (e: any) {
+      } catch (e) {
+        const err = e instanceof Error ? e : undefined;
         if (ignore) return;
         setStatus("error");
-        setMessage(e?.message ?? "Failed to reach backend");
+        setMessage(err?.message ?? "Failed to reach backend");
       }
     })();
     return () => {
