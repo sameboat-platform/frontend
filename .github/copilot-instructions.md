@@ -35,13 +35,10 @@ What to edit where
 Examples
 
 -   New component:
-    -   Create `src/components/Hello.tsx` exporting a function component.
-    -   Import it in `src/App.tsx`: `import { Hello } from './components/Hello.tsx'` and render `<Hello name="World" />`.
-        -Examples
--   New component:
     -   Create `src/components/Hello.tsx` exporting a default function component.
-    -   Import it in `src/App.tsx`: `import Hello from './components/Hello.tsx'` and render `<Hello name=\"World\" />`.
+    -   Import in `src/App.tsx`: `import Hello from './components/Hello.tsx'` and render `<Hello name="World" />`.
 -   Using public asset: reference `/vite.svg` directly in `img src` or as background in CSS.
+-   Add a runtime guard: place `isFooResponse` in `src/lib/foo.ts` mirroring `health.ts`.
 
 Gotchas
 
@@ -58,3 +55,9 @@ Pointers to key files
 Migration context
 
 -   Repository moved from `ArchILLtect/sameboat-frontend` to `sameboat-platform/frontend`. Historical issue/PR references may use the old org prefix. Use the new path for badges, links, and cloning.
+
+Further docs
+
+-   `README.md` – high-level overview & workflows.
+-   `CONTRIBUTING.md` – contribution process & quality gates.
+-   `docs/architecture.md` – current architecture + extension points.
