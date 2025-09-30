@@ -13,7 +13,7 @@ SameBoat Frontend is a lightweight Vite + React 19 single-page application scaff
 | Build dev server | Vite 7                             | HMR + fast SWC transforms                                       |
 | UI library       | React 19                           | Concurrent features enabled by default StrictMode               |
 | Transpilation    | SWC via `@vitejs/plugin-react-swc` | Faster than Babel for local dev                                 |
-| Language         | TypeScript ~5.8 (strict)           | `noUncheckedSideEffectImports`, `verbatimModuleSyntax` enforced |
+| Language         | TypeScript ^5.8.0 (strict)         | `noUncheckedSideEffectImports`, `verbatimModuleSyntax` enforced |
 | Linting          | ESLint flat config                 | React Hooks + React Refresh plugins                             |
 | CI               | GitHub Actions                     | Node 20, type-check + build                                     |
 
@@ -21,11 +21,11 @@ SameBoat Frontend is a lightweight Vite + React 19 single-page application scaff
 
 ```
 src/
-	main.tsx          # Entry – mounts <App />
-	App.tsx           # App shell placeholder
-	index.css         # Global styles
-	pages/            # (Added) Page-level React components
-	lib/              # Shared utilities (e.g., api.ts, health.ts)
+  main.tsx          # Entry – mounts <App />
+  App.tsx           # App shell placeholder
+  index.css         # Global styles
+  pages/            # (Added) Page-level React components
+  lib/              # Shared utilities (e.g., api.ts, health.ts)
 public/             # Static assets served at root (/favicon, /vite.svg)
 ```
 

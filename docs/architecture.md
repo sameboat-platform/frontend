@@ -31,7 +31,7 @@ Current scope: Minimal Vite + React SPA scaffold intended for incremental expans
 
 ## TypeScript Conventions
 
--   Strict TS, ESM-only (`verbatimModuleSyntax`).
+-   Strict TS, ESM-only (`verbatimModuleSyntax` ensures TypeScript preserves your import/export syntax exactly as written, which is important for correct ESM output and avoiding accidental default/named import mixing).
 -   Prefer `import type` for type-only imports.
 -   Avoid `any`; use discriminated unions or index signatures with narrowers.
 
