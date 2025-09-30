@@ -1,5 +1,5 @@
 [[redirects]]
 from = "/api/*"
-to = "https://<YOUR-BACKEND-HOST>/:splat"
+to = "https://https://api-sameboat.onrender.com//:splat"
 status = 200
 force = true
