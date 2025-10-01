@@ -6,15 +6,14 @@ import { FormField } from "../components/FormField";
 import { Alert } from "../components/Alert";
 
 export default function Register() {
-  const { register, status, errorMessage, clearError } = useAuth();
+  const { register, errorMessage, clearError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [clientError, setClientError] = useState<string | null>(null);
-
-  const loading = status === 'loading';
+  const [submitting, setSubmitting] = useState(false);
 
   function validate(): boolean {
     if (!email) { setClientError('Email is required'); return false; }
@@ -26,11 +25,14 @@ export default function Register() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    setSubmitting(true);
     const ok = await register(email, password);
     if (ok) {
       const from = (location.state as any)?.from?.pathname ?? '/me';
       navigate(from, { replace: true });
+      return;
     }
+    setSubmitting(false);
   };
 
   const handleFieldChange = (setter: (v: string) => void) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -38,6 +40,8 @@ export default function Register() {
     if (clientError) setClientError(null);
     if (errorMessage) clearError();
   };
+
+  const disabled = submitting;
 
   return (
     <main className="mx-auto max-w-sm p-6">
@@ -57,7 +61,7 @@ export default function Register() {
           onFocus={() => { if (errorMessage) clearError(); if (clientError) setClientError(null); }}
           placeholder="you@example.com"
           autoComplete="email"
-          disabled={loading}
+          disabled={disabled}
         />
         <FormField
           label="Password"
@@ -68,14 +72,14 @@ export default function Register() {
           onChange={handleFieldChange(setPassword)}
           onFocus={() => { if (errorMessage) clearError(); if (clientError) setClientError(null); }}
           autoComplete="new-password"
-          disabled={loading}
+          disabled={disabled}
         />
         <button
           type="submit"
-          disabled={loading}
+          disabled={disabled}
           className="w-full rounded bg-black text-white py-2 font-medium disabled:opacity-50"
         >
-          {loading ? 'Creating account…' : 'Sign Up'}
+          {submitting ? 'Creating account…' : 'Sign Up'}
         </button>
       </form>
       <p className="mt-4 text-sm">
