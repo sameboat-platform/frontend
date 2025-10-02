@@ -6,12 +6,22 @@
 
 SameBoat Frontend is a lightweight Vite + React 19 single-page application scaffold. It focuses on fast local iteration (HMR), strict TypeScript, and a minimal baseline you can extend (routing, API clients, state management) without vendor lock-in.
 
+### Planning Artifacts
+
+-   Week 3 Progress Checklist: `docs/week-3-plan-checklist.md`
+-   Week 4 Draft Plan: `docs/week-4-plan-draft.md`
+-   Changelog: `CHANGELOG.md` (see [Unreleased] section for in-flight changes)
+
+### Versioning
+
+Pre-1.0 releases use `0.x.y`; breaking changes may occur between minor bumps. Each meaningful change should append a line under `[Unreleased]` in the changelog; on tagging a release, move those lines into a dated section.
+
 ## Tech Stack
 
 | Layer            | Choice                             | Notes                                                           |
 | ---------------- | ---------------------------------- | --------------------------------------------------------------- |
 | Build dev server | Vite 7                             | HMR + fast SWC transforms                                       |
-| UI library       | React 19                           | Concurrent features enabled by default StrictMode               |
+| UI library       | React 19 + Chakra UI (selective)   | React for core + incremental Chakra adoption (cards, forms)     |
 | Transpilation    | SWC via `@vitejs/plugin-react-swc` | Faster than Babel for local dev                                 |
 | Language         | TypeScript ^5.8.0 (strict)         | `noUncheckedSideEffectImports`, `verbatimModuleSyntax` enforced |
 | Linting          | ESLint flat config                 | React Hooks + React Refresh plugins                             |
@@ -23,11 +33,12 @@ SameBoat Frontend is a lightweight Vite + React 19 single-page application scaff
 src/
   main.tsx          # Entry – mounts <App />
   App.tsx           # App shell (wraps providers + routes)
-  routes/           # Route configuration + ProtectedRoute
-  state/auth/       # Auth context store (login/logout/refresh)
-  pages/            # Page-level React components
-  components/       # Reusable UI bits (Alert, FormField, etc.)
-  lib/              # Shared utilities (api.ts, health.ts)
+    routes/           # Route configuration + ProtectedRoute + layout transitions
+    state/auth/       # Auth context store (bootstrap, login/logout/refresh, error mapping)
+    pages/            # Page-level React components
+    components/       # Reusable UI bits (AuthForm, FormField, Footer, UserSummary, RuntimeDebugPanel, GlobalRouteTransition)
+    lib/              # Shared utilities (api.ts, health.ts)
+    theme.ts          # Chakra theme customization (dark-mode default, brand tokens)
 public/             # Static assets served at root (/favicon, /vite.svg)
 ```
 
@@ -43,13 +54,19 @@ Add components under `src/components/` and import into pages or `App.tsx`.
 
 ## Environment Variables
 
-Vite exposes variables prefixed with `VITE_`. Example:
+All variables must be prefixed with `VITE_` for exposure to the client bundle.
 
-```
-VITE_API_BASE_URL=http://localhost:8080
-```
+| Variable                    | Purpose                                       | Notes                                       |
+| --------------------------- | --------------------------------------------- | ------------------------------------------- |
+| `VITE_API_BASE_URL`         | Override backend origin (dev)                 | Fallback to relative `/` (proxy) when unset |
+| `VITE_DEBUG_AUTH`           | Enable verbose auth console diagnostics       | Any truthy value enables extra logs         |
+| `VITE_DEBUG_AUTH_BOOTSTRAP` | Additional bootstrap heartbeat logs           | Aids diagnosing early 401 noise             |
+| `VITE_HEALTH_REFRESH_MS`    | Interval (ms) between health pings            | Defaults to `30000`; must be > 1000         |
+| `VITE_APP_VERSION`          | Build/app version string                      | Shown in footer when present                |
+| `VITE_COMMIT_HASH`          | Git commit hash (fallback if version missing) | Truncated to 7 chars in footer              |
+| `VITE_FEEDBACK_URL`         | External feedback / issue link                | Defaults to repo issue creation URL         |
 
-Access via `import.meta.env.VITE_API_BASE_URL` (see `src/lib/api.ts`). Provide a `.env.local` (ignored) for machine-specific overrides.
+You can create a `.env.example` enumerating these for contributors. Local overrides belong in `.env.local` (git‑ignored).
 
 ## API Layer
 
@@ -66,42 +83,48 @@ const health = await api<HealthResponse>("/api/actuator/health");
 
 Add narrowers / runtime guards in `src/lib/*` (e.g., `health.ts`).
 
-## Auth UI (Week 3 Sprint)
+## Authentication System
 
-The authentication UX is implemented using a lightweight React Context store designed to be swappable with Zustand later without changing component call sites.
+The authentication layer uses a React Context (`AuthProvider`) that performs exactly one bootstrap fetch to `/api/me` to hydrate the session user (cookie-based). React 19 StrictMode double-mount is neutralized via a module-level flag ensuring `refresh()` is not called twice.
 
-### Architecture
+### Key Points
 
--   Provider: `AuthProvider` in `src/state/auth/auth-context.tsx` mounts high in `App.tsx`.
--   Hook: `useAuth()` (re-export) – consumers import only from `state/auth/useAuth`.
--   State shape (`AuthStore`): `{ user, status, errorCode, errorMessage, lastFetched, bootstrapped }` plus actions.
--   Actions: `login(email, password)`, `register(email, password)`, `refresh()`, `logout()`, `clearError()`.
--   Bootstrapping: A single `refresh()` runs on mount to hydrate session (`bootstrapped` flag prevents flash redirects).
--   Protected routes: `ProtectedRoute` defers redirect until `bootstrapped` is true and `status` not loading.
--   Errors: Backend auth codes (`BAD_CREDENTIALS`, `EMAIL_EXISTS`, `SESSION_EXPIRED`, etc.) mapped to friendly strings in `state/auth/errors.ts`.
+-   Provider: `AuthProvider` (`src/state/auth/auth-context.tsx`) – wraps the router.
+-   Actions: `login`, `register`, `refresh`, `logout`, `clearError`.
+-   Status: `status` cycles through `idle | loading | authenticated | error` while `bootstrapped` gates initial redirects.
+-   Error Mapping: Server error payload (`{ error, message }`) is normalized in `errors.ts` to friendly messages (e.g. `BAD_CREDENTIALS`, `EMAIL_EXISTS`, `VALIDATION_ERROR`).
+-   User Normalization: Responses may return `{ user: {...} }` or raw user; normalization flattens `role` into `roles[]`, surfaces `displayName`.
+-   Protected Routes: `ProtectedRoute` blocks redirect until `bootstrapped` true; shows a Chakra spinner with framer-motion transitions.
+-   Environment Debug Flags: `VITE_DEBUG_AUTH`, `VITE_DEBUG_AUTH_BOOTSTRAP` toggle verbose logging & heartbeats (useful for analyzing early 401 patterns).
 
-### Forms
+### Forms & UI
 
--   Pages: `Login` (`/login`) and `Register` (`/register`), with client validation (email format + password ≥ 6 chars).
--   Submit buttons disable only during actual submission (local `submitting` flag) – initial session check does not block form interaction.
--   Errors (client + backend) presented via shared `<Alert kind="error" />` component.
--   Navigation after success: Redirect returns to original protected destination if user arrived via `ProtectedRoute` bounce (stored in `location.state.from`).
+-   Forms rewritten using Chakra `FormControl`, `Input`, `FormErrorMessage`, and `Button`.
+-   Field-level client validation (email format, password length) surfaces inline errors while backend errors appear in a Chakra `Alert`.
+-   Redirect logic preserves original route (`location.state.from`) after successful auth.
 
-### Redirect Preservation
+### Session Refresh Strategy
 
-When an unauthenticated user visits `/me`, `ProtectedRoute` navigates to `/login` with state:
+1. On first mount: run `refresh()` to attempt session hydration.
+2. If unauthenticated (401) during bootstrap: treat as normal (no noisy error state).
+3. Post-bootstrap 401s (e.g. expiry): surface mapped error and allow UI to re-auth.
+4. A fail-safe timeout flips `bootstrapped` after 5s if the network call hangs.
 
-```ts
-{
-    from: location, authMsg, authCode;
-}
-```
+### Future Store Swap
 
-Post-auth success redirects to `from.pathname` or `/me` fallback.
+Because components import only `useAuth()` (wrapper), migrating to Zustand requires only replacing its internals with a store hook matching the same return contract.
 
-### Future Migration (Zustand)
+## Runtime Debug Panel
 
-To swap to Zustand later, implement a `useAuthStore` with the same contract and replace the body of `useAuth()`; no component changes required.
+`RuntimeDebugPanel` (dev-only) provides an at-a-glance status overlay:
+
+-   Collapsible floating panel (bottom-right) with reduced-motion respect.
+-   Displays auth state (`status`, `bootstrapped`, `lastFetched`), active user, and API base.
+-   Probes `/actuator/health` & `/api/me` every 15s; maintains last 25 probe history entries.
+-   Cumulative error count badge; copy buttons for API base & user ID.
+-   Manual refresh & force-refresh controls for diagnosing bootstrap issues.
+
+Remove or disable this panel for production builds (guarded by `import.meta.env.PROD`).
 
 ## Testing Workflow
 

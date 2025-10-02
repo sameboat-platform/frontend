@@ -20,6 +20,14 @@
 -   Add sticky top navigation bar (reuse `Layout` / extend `AppShell` with nav actions, responsive collapse if needed).
 -   Implement reduced motion guard using `window.matchMedia('(prefers-reduced-motion: reduce)')` before triggering animations.
 
+## Workflow / Tooling
+
+-   Review and iterate `docs/developer-workflow-checklist.md` after first full usage cycle.
+-   Wire `changelog:check` into CI as a required status (already present; enforce branch protection rule).
+-   Add coverage reporting thresholds (Vitest) and fail CI below baseline.
+-   Consider conventional commit linting to automate future changelog sections.
+-   Automate release section generation (script to move `[Unreleased]` to new version + update links).
+
 ## Notes
 
 Add new sections here as areas expand (e.g., Testing, Performance, Accessibility).
