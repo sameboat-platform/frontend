@@ -3,7 +3,8 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../state/auth/useAuth";
 import type { FormEvent, ChangeEvent } from "react";
 import { FormField } from "../components/FormField";
-import { Alert } from "../components/Alert";
+import { Alert, AlertIcon, Button, VStack } from '@chakra-ui/react';
+import { AuthForm } from '../components/AuthForm';
 
 export default function Login() {
   const { login, errorMessage, clearError } = useAuth();
@@ -47,13 +48,18 @@ export default function Login() {
   const disabled = submitting; // only disable during explicit submit
 
   return (
-    <main className="mx-auto max-w-sm p-6">
-      <h1 className="text-2xl font-semibold mb-4">Sign In</h1>
-      <p className="text-sm mb-4 opacity-80">Access your SameBoat account.</p>
-      {(clientError || errorMessage) && (
-        <Alert kind="error">{clientError || errorMessage}</Alert>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+    <AuthForm
+      title='Sign In'
+      subtitle='Access your SameBoat account.'
+      footer={<span>Need an account? <Link to="/register" className="underline">Create one</Link></span>}
+    >
+      <VStack as='form' onSubmit={handleSubmit} spacing={4} align='stretch' noValidate>
+        {(clientError || errorMessage) && (
+          <Alert status='error' variant='subtle'>
+            <AlertIcon />
+            {clientError || errorMessage}
+          </Alert>
+        )}
         <FormField
           label="Email"
           name="email"
@@ -65,6 +71,7 @@ export default function Login() {
           placeholder="you@example.com"
           autoComplete="email"
           disabled={disabled}
+          error={clientError?.includes('Email') ? clientError : null}
         />
         <FormField
           label="Password"
@@ -76,18 +83,12 @@ export default function Login() {
           onFocus={() => { if (errorMessage) clearError(); if (clientError) setClientError(null); }}
           autoComplete="current-password"
           disabled={disabled}
+          error={clientError?.toLowerCase().includes('password') ? clientError : null}
         />
-        <button
-          type="submit"
-          disabled={disabled}
-          className="w-full rounded bg-black text-white py-2 font-medium disabled:opacity-50"
-        >
-          {submitting ? 'Signing in…' : 'Sign In'}
-        </button>
-      </form>
-      <p className="mt-4 text-sm">
-        Need an account? <Link to="/register" className="underline">Create one</Link>
-      </p>
-    </main>
+        <Button type='submit' colorScheme='blue' isDisabled={disabled} isLoading={submitting} loadingText='Signing in…'>
+          Sign In
+        </Button>
+      </VStack>
+    </AuthForm>
   );
 }
