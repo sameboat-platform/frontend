@@ -28,8 +28,9 @@ export default function Register() {
     setSubmitting(true);
     const ok = await register(email, password);
     if (ok) {
-      const from = (location.state as any)?.from?.pathname ?? '/me';
-      navigate(from, { replace: true });
+      const from = (location.state as any)?.from?.pathname;
+      const target = from && from !== '/login' ? from : '/';
+      navigate(target, { replace: true });
       return;
     }
     setSubmitting(false);

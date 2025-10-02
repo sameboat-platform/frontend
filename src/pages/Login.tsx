@@ -27,10 +27,13 @@ export default function Login() {
     if (!validate()) return;
     setSubmitting(true);
     const ok = await login(email, password);
+    console.log(ok);
     if (ok) {
-      const from = (location.state as any)?.from?.pathname ?? '/me';
-      navigate(from, { replace: true });
-      return; // no reset needed
+      // If we came from a protected route, honor it; otherwise go home
+      const from = (location.state as any)?.from?.pathname;
+      const target = from && from !== '/login' ? from : '/';
+      navigate(target, { replace: true });
+      return;
     }
     setSubmitting(false);
   };

@@ -4,17 +4,41 @@ import { api } from '../../lib/api';
 import { isBackendAuthErrorPayload, mapAuthError } from './errors';
 
 // Endpoint paths (centralized so migrations are single-touch)
+// NOTE: User self endpoint on backend is dual-mapped as /me and /api/me (NOT /auth/me)
+// Previous value '/api/auth/me' caused 401s because that route does not return the session user.
 const LOGIN_PATH = '/api/auth/login';
 const REGISTER_PATH = '/api/auth/register';
-const ME_PATH = '/api/auth/me';
+const ME_PATH = '/api/me';
 const LOGOUT_PATH = '/api/auth/logout';
 
-interface RawUser { id: string; email: string; roles?: string[] }
+interface RawUser { id: string; email: string; roles?: string[]; displayName?: string | null }
 function isRawUser(v: unknown): v is RawUser {
   return !!v && typeof v === 'object' && 'id' in v && 'email' in v;
 }
+function extractRawUser(v: unknown): RawUser | undefined {
+  if (isRawUser(v)) return normalizeUser(v as any);
+  if (v && typeof v === 'object' && 'user' in v) {
+    const inner = (v as any).user;
+    if (isRawUser(inner)) return normalizeUser(inner);
+  }
+  return undefined;
+}
+function normalizeUser(u: any): RawUser {
+  const roles = !u.roles && typeof u.role === 'string'
+    ? [u.role]
+    : Array.isArray(u.roles)
+      ? u.roles
+      : u.roles ? [u.roles] : undefined;
+  return { id: u.id, email: u.email, roles, displayName: u.displayName ?? u.name ?? null };
+}
 
 const AuthContext = createContext<AuthStore | null>(null);
+
+// React 18/19 StrictMode intentionally mounts, unmounts, then remounts components
+// to surface unsafe side effects. Our bootstrap effect would call `refresh()` twice
+// leading to duplicate unauthenticated 401s in the console (plus the debug panel probe = 3).
+// Track a module-level flag so we only perform the initial refresh exactly once per page load.
+let didInitialBootstrapAttempt = false;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -25,8 +49,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [bootstrapped, setBootstrapped] = useState(false);
 
   const bootstrappedRef = useRef(false);
-  const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
+  const mountedRef = useRef(false);
+  console.debug('[auth] mounted', { mountedRef: mountedRef.current });
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+  console.debug('[auth] mounted', { mountedRef: mountedRef.current });
+
+  // Heartbeat debug: log every second until bootstrapped flips (dev only)
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (bootstrappedRef.current) return;
+    let ticks = 0;
+    const id = setInterval(() => {
+      ticks++;
+      if (bootstrappedRef.current) { clearInterval(id); return; }
+      console.debug('[auth][hb]', { tick: ticks, status, bootstrappedRef: bootstrappedRef.current });
+      if (ticks >= 8) { // after ~8s force flip for visibility
+        bootstrappedRef.current = true;
+        if (mountedRef.current) {
+          setBootstrapped(true);
+          setStatus(prev => (prev === 'loading' ? 'idle' : prev));
+          console.warn('[auth][hb] forced flip after 8 ticks (bootstrapped=true)');
+        }
+        clearInterval(id);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [status]);
 
   // Normalize & record error state
   const recordError = useCallback((code: string | undefined, fallback?: string) => {
@@ -46,38 +97,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     const controller = new AbortController();
+    let data: unknown | undefined;
+    let hadError = false;
+    if (import.meta.env.DEV) console.debug('[auth] refresh() begin', { ME_PATH });
+    setStatus(prev => (prev === 'idle' ? 'loading' : prev));
     try {
-      setStatus(prev => (prev === 'idle' ? 'loading' : prev));
-      const data = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include', signal: controller.signal });
-      if (!mountedRef.current) return;
-      if (isRawUser(data)) {
-        setUser({ id: data.id, email: data.email, roles: data.roles });
+      data = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include', signal: controller.signal });
+    } catch (e) {
+      hadError = true;
+      if (!(e instanceof DOMException && e.name === 'AbortError')) {
+        // treat as unauthenticated on first run, error thereafter
+        if (!bootstrappedRef.current) {
+          if (import.meta.env.DEV) console.debug('[auth] refresh() unauthenticated (expected first run)');
+          if (mountedRef.current) {
+            setUser(null);
+            setStatus('idle');
+            clearError();
+          }
+        } else {
+          if (mountedRef.current) {
+            setUser(null);
+            recordError('UNAUTHORIZED');
+          }
+          if (import.meta.env.DEV) console.debug('[auth] refresh() error after bootstrap', e);
+        }
+      } else {
+        if (import.meta.env.DEV) console.debug('[auth] refresh() aborted');
+      }
+    }
+    if (!hadError && mountedRef.current) {
+      const u = extractRawUser(data);
+      if (u) {
+        setUser(u);
         setStatus('authenticated');
         setLastFetched(Date.now());
         clearError();
+        if (import.meta.env.DEV) console.debug('[auth] refresh() success (user)');
       } else {
         setUser(null);
         setStatus('idle');
+        if (import.meta.env.DEV) console.debug('[auth] refresh() success (no user)');
       }
-    } catch (e) {
-      if (!mountedRef.current || (e instanceof DOMException && e.name === 'AbortError')) return;
-      setUser(null);
-      if (!bootstrappedRef.current) {
-        setStatus('idle');
-        clearError();
-      } else {
-        recordError('UNAUTHORIZED');
-      }
-    } finally {
-      bootstrappedRef.current = true;
-      if (mountedRef.current) setBootstrapped(true);
     }
+    bootstrappedRef.current = true;
+    if (mountedRef.current) setBootstrapped(true);
+    if (import.meta.env.DEV) console.debug('[auth] refresh() end: bootstrapped = true');
   }, [clearError, recordError]);
 
   const login = useCallback<AuthStore['login']>(async (email, password) => {
     const controller = new AbortController();
     setStatus('loading');
+    console.log("Attempting login...");
     clearError();
+    let success = false;
     try {
       const res = await api<unknown>(LOGIN_PATH, {
         method: 'POST',
@@ -85,53 +157,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include',
         signal: controller.signal
       });
-      if (!mountedRef.current) return false;
-      if (isRawUser(res)) {
-        setUser({ id: res.id, email: res.email, roles: res.roles });
-        setStatus('authenticated');
-        setLastFetched(Date.now());
+      console.log(mountedRef.current);
+      const u = extractRawUser(res);
+      console.log(u);
+      if (u) {
+        if (mountedRef.current) {
+          setUser(u);
+          setStatus('authenticated');
+          setLastFetched(Date.now());
+        }
+        success = true;
       } else {
-        await refresh();
+        await refresh(); // cookie set, no body scenario
+        success = true;
       }
-      return true;
     } catch (e) {
-      if (!mountedRef.current || (e instanceof DOMException && e.name === 'AbortError')) return false;
-      let code: string | undefined; let fallback: string | undefined;
-      if (e && typeof e === 'object' && 'message' in e) fallback = String((e as any).message);
-      if (isBackendAuthErrorPayload((e as any).cause)) code = (e as any).cause.error;
-      recordError(code || 'BAD_CREDENTIALS', fallback);
-      return false;
+      if (!(e instanceof DOMException && e.name === 'AbortError')) {
+        let code: string | undefined; let fallback: string | undefined;
+        if (e && typeof e === 'object' && 'message' in e) fallback = String((e as any).message);
+        if (isBackendAuthErrorPayload((e as any).cause)) code = (e as any).cause.error;
+        if (mountedRef.current) recordError(code || 'BAD_CREDENTIALS', fallback);
+      }
+      success = false;
     }
+    return success;
   }, [clearError, recordError, refresh]);
 
   const register = useCallback<AuthStore['register']>(async (email, password) => {
     const controller = new AbortController();
     setStatus('loading');
     clearError();
+    let success = false;
     try {
       const res = await api<unknown>(REGISTER_PATH, {
         method: 'POST',
         body: JSON.stringify({ email, password }),
         credentials: 'include',
-        signal: controller.signal
+        signal: controller.signal,
       });
-      if (!mountedRef.current) return false;
-      if (isRawUser(res)) {
-        setUser({ id: res.id, email: res.email, roles: res.roles });
-        setStatus('authenticated');
-        setLastFetched(Date.now());
+      const u = extractRawUser(res);
+      if (u) {
+        if (mountedRef.current) {
+          setUser(u);
+          setStatus('authenticated');
+          setLastFetched(Date.now());
+        }
+        success = true;
       } else {
         await refresh();
+        success = true;
       }
-      return true;
     } catch (e) {
-      if (!mountedRef.current || (e instanceof DOMException && e.name === 'AbortError')) return false;
-      let code: string | undefined; let fallback: string | undefined;
-      if (e && typeof e === 'object' && 'message' in e) fallback = String((e as any).message);
-      recordError(code || 'EMAIL_EXISTS', fallback);
-      return false;
+      if (!(e instanceof DOMException && e.name === 'AbortError')) {
+        let code: string | undefined; let fallback: string | undefined;
+        if (e && typeof e === 'object') {
+          if ('message' in e) fallback = String((e as any).message);
+          if (isBackendAuthErrorPayload((e as any).cause)) code = (e as any).cause.error;
+        }
+        if (mountedRef.current) recordError(code || 'UNKNOWN_ERROR', fallback);
+      }
+      success = false;
     }
-  }, [clearError, recordError, refresh]);
+    return success;
+   }, [clearError, recordError, refresh]);
 
   const logout = useCallback<AuthStore['logout']>(async () => {
     const controller = new AbortController();
@@ -151,7 +239,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Bootstrap exactly once on mount
   useEffect(() => {
-    refresh();
+    if (!didInitialBootstrapAttempt) {
+      didInitialBootstrapAttempt = true;
+      if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_BOOTSTRAP) console.debug('[auth] initial bootstrap refresh()');
+      refresh();
+    } else if (import.meta.env.DEV) {
+      console.debug('[auth] skipped duplicate bootstrap refresh (StrictMode remount)');
+    }
+    // Safety fallback: ensure bootstrapped flips after 5s even if refresh hangs
+    const failSafe = setTimeout(() => {
+      if (import.meta.env.DEV) console.debug('[auth] refresh() timeout fail-safe triggered');
+      if (!bootstrappedRef.current && mountedRef.current) {
+        bootstrappedRef.current = true;
+        setBootstrapped(true);
+        setStatus(prev => (prev === 'loading' ? 'idle' : prev));
+        if (import.meta.env.DEV) console.debug('[auth] refresh() timeout fail-safe triggered');
+      }
+    }, 5000);
+    return () => clearTimeout(failSafe);
   }, [refresh]);
 
   const value: AuthStore = useMemo(() => ({
@@ -167,6 +272,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     clearError,
   }), [user, status, errorCode, errorMessage, lastFetched, bootstrapped, login, register, refresh, logout, clearError]);
+
+  // Expose for deep debugging (dev only). Allows manual inspection: window.__AUTH__
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
+    (window as any).__AUTH__ = value;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
