@@ -6,6 +6,8 @@ interface ImportMetaEnv {
     readonly VITE_DEBUG_AUTH?: string;
     /** Force auth bootstrap heartbeat / timing diagnostics. */
     readonly VITE_DEBUG_AUTH_BOOTSTRAP?: string;
+    /** Interval (ms) between automatic backend health checks (default 30000). */
+    readonly VITE_HEALTH_REFRESH_MS?: string;
 }
 
 interface ImportMeta {
