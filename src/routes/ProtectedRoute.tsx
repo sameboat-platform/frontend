@@ -1,6 +1,7 @@
-import { Navigate, useLocation } from "react-router-dom";
-import type { ReactNode } from "react";
-import { useAuth } from "../state/auth/useAuth";
+import { Navigate, useLocation } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { useAuth } from '../state/auth/useAuth';
+import { Center, Spinner } from '@chakra-ui/react';
 
 /**
  * ProtectedRoute that redirects to /login when user is not authenticated.
@@ -12,7 +13,11 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   const loading = status === "loading" || !bootstrapped;
   if (loading) {
-    return <div className="p-6 text-sm opacity-70">Checking session…</div>;
+    return (
+      <Center py={16}>
+        <Spinner size="lg" />
+      </Center>
+    );
   }
 
   if (!user) {
