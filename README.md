@@ -22,14 +22,16 @@ SameBoat Frontend is a lightweight Vite + React 19 single-page application scaff
 ```
 src/
   main.tsx          # Entry – mounts <App />
-  App.tsx           # App shell placeholder
-  index.css         # Global styles
-  pages/            # (Added) Page-level React components
-  lib/              # Shared utilities (e.g., api.ts, health.ts)
+  App.tsx           # App shell (wraps providers + routes)
+  routes/           # Route configuration + ProtectedRoute
+  state/auth/       # Auth context store (login/logout/refresh)
+  pages/            # Page-level React components
+  components/       # Reusable UI bits (Alert, FormField, etc.)
+  lib/              # Shared utilities (api.ts, health.ts)
 public/             # Static assets served at root (/favicon, /vite.svg)
 ```
 
-Add components under `src/components/` (create folder when needed) and import into pages or `App.tsx`.
+Add components under `src/components/` and import into pages or `App.tsx`.
 
 ## Development Workflow
 
@@ -51,13 +53,113 @@ Access via `import.meta.env.VITE_API_BASE_URL` (see `src/lib/api.ts`). Provide a
 
 ## API Layer
 
-`src/lib/api.ts` exports a small generic `api<T>` wrapper around `fetch`. Prefer:
+`src/lib/api.ts` exports a small generic `api<T>` wrapper around `fetch`.
+All requests automatically include `credentials: 'include'` so the backend's
+`SBSESSION` (httpOnly) cookie-based session flows transparently.
+Structured error JSON (shape: `{ error, message }`) is surfaced via `err.cause`.
+
+Example:
 
 ```ts
 const health = await api<HealthResponse>("/api/actuator/health");
 ```
 
-Add narrowers / runtime guards in `src/lib/*` (e.g., `health.ts` with `isHealthResponse`).
+Add narrowers / runtime guards in `src/lib/*` (e.g., `health.ts`).
+
+## Auth UI (Week 3 Sprint)
+
+The authentication UX is implemented using a lightweight React Context store designed to be swappable with Zustand later without changing component call sites.
+
+### Architecture
+
+-   Provider: `AuthProvider` in `src/state/auth/auth-context.tsx` mounts high in `App.tsx`.
+-   Hook: `useAuth()` (re-export) – consumers import only from `state/auth/useAuth`.
+-   State shape (`AuthStore`): `{ user, status, errorCode, errorMessage, lastFetched, bootstrapped }` plus actions.
+-   Actions: `login(email, password)`, `register(email, password)`, `refresh()`, `logout()`, `clearError()`.
+-   Bootstrapping: A single `refresh()` runs on mount to hydrate session (`bootstrapped` flag prevents flash redirects).
+-   Protected routes: `ProtectedRoute` defers redirect until `bootstrapped` is true and `status` not loading.
+-   Errors: Backend auth codes (`BAD_CREDENTIALS`, `EMAIL_EXISTS`, `SESSION_EXPIRED`, etc.) mapped to friendly strings in `state/auth/errors.ts`.
+
+### Forms
+
+-   Pages: `Login` (`/login`) and `Register` (`/register`), with client validation (email format + password ≥ 6 chars).
+-   Submit buttons disable only during actual submission (local `submitting` flag) – initial session check does not block form interaction.
+-   Errors (client + backend) presented via shared `<Alert kind="error" />` component.
+-   Navigation after success: Redirect returns to original protected destination if user arrived via `ProtectedRoute` bounce (stored in `location.state.from`).
+
+### Redirect Preservation
+
+When an unauthenticated user visits `/me`, `ProtectedRoute` navigates to `/login` with state:
+
+```ts
+{
+    from: location, authMsg, authCode;
+}
+```
+
+Post-auth success redirects to `from.pathname` or `/me` fallback.
+
+### Future Migration (Zustand)
+
+To swap to Zustand later, implement a `useAuthStore` with the same contract and replace the body of `useAuth()`; no component changes required.
+
+## Testing Workflow
+
+### Tooling
+
+-   Test runner: Vitest (`npm run test`)
+-   Environment: jsdom
+-   Libraries: `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`
+
+### Running Tests
+
+```bash
+npm run test          # Single run
+npx vitest watch      # (Optional) Interactive watch mode
+```
+
+### Test Locations
+
+All test files live under `src/__tests__/` (`*.test.tsx` for component/routes logic).
+
+### Current Coverage Focus
+
+-   Protected route access & redirect
+-   Client-side form validation for login/register (email format + password length)
+
+### Writing New Tests
+
+1. Import the component under test.
+2. Wrap with `AuthProvider` + a memory router if route context needed.
+3. Mock network as required (e.g. `vi.spyOn(global, 'fetch')` returning a resolved `Response`).
+4. Use semantic queries (`getByRole`, `findByText`) over `querySelector`.
+5. Assert side-effects (redirect) via `history` (MemoryRouter entries) or presence of destination content.
+
+### Mocking Fetch Example
+
+```ts
+vi.spyOn(global, "fetch").mockResolvedValueOnce(
+    new Response(
+        JSON.stringify({
+            id: "u1",
+            email: "a@b.com",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+    )
+);
+```
+
+### Adding Backend Scenario Tests
+
+-   Successful login → redirected to `/me`.
+-   BAD_CREDENTIALS response → `<Alert>` shows friendly message.
+-   SESSION_EXPIRED path (simulate `/me` 401 after initial bootstrap) → redirect preserved.
+
+### Performance / Stability Tips
+
+-   Keep auth store interactions synchronous except for actual network calls.
+-   Use `await waitFor(...)` only for async UI transitions; prefer immediate assertions when possible.
+-   Avoid leaking fetch mocks between tests – reset with `vi.restoreAllMocks()` in `afterEach`.
 
 ## Quality Gates
 
@@ -92,6 +194,7 @@ npm run build
 -   dev – start Vite dev server
 -   build – production build
 -   preview – preview production build locally
+-   test – run Vitest suite
 
 ## Repository Migration
 
