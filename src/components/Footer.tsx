@@ -1,5 +1,6 @@
 import { useAuth } from '../state/auth/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { Box, Button, Text, Link, Flex, HStack, Code } from '@chakra-ui/react';
 
 export default function Footer() {
   const { user, logout, status } = useAuth();
@@ -11,21 +12,28 @@ export default function Footer() {
     navigate('/');
   };
 
+  const version = import.meta.env.VITE_APP_VERSION || import.meta.env.VITE_COMMIT_HASH || 'dev';
+  const shortVersion = typeof version === 'string' && version.length > 10 ? version.slice(0, 7) : version;
+  const feedbackUrl = import.meta.env.VITE_FEEDBACK_URL || 'https://github.com/sameboat-platform/frontend/issues/new';
+
   return (
-    <footer className="mt-16 border-t py-6 text-xs text-center opacity-80 flex flex-col items-center gap-3">
-      <div>
-        Built by <strong><a href="mailto:nick@nickhanson.me" className="underline">Nick Hanson</a> ·&nbsp;</strong>
-        <a href="https://nickhanson.me" className="underline" target="_blank" rel="noreferrer">Showcase</a>
-      </div>
-      {user && (
-        <button
-          onClick={handleLogout}
-          disabled={busy}
-          className="rounded bg-black text-white px-3 py-1 disabled:opacity-50"
-        >
-          {busy ? 'Signing out…' : 'Logout'}
-        </button>
-      )}
-    </footer>
+    <Box as='footer' mt='auto' flexShrink={0} borderTopWidth='1px' borderColor='gray.200' _dark={{ borderColor: 'gray.700' }} marginTop={10} py={4} px={4} fontSize='xs'>
+      <Flex direction={{ base: 'column', md: 'row' }} justifyContent='space-between' alignItems={{ base: 'flex-start', md: 'center' }} gap={3} opacity={0.85}>
+        <Flex direction='column' gap={1}>
+          <Text>
+            Built by <strong><Link href='mailto:nick@nickhanson.me' textDecoration='underline'>Nick Hanson</Link></strong> · <Link href='https://nickhanson.me' textDecoration='underline' isExternal>Showcase</Link>
+          </Text>
+          <HStack spacing={3} wrap='wrap'>
+            <Text>Build: <Code fontSize='2xs'>{shortVersion}</Code></Text>
+            <Link href={feedbackUrl} isExternal textDecoration='underline'>Feedback</Link>
+          </HStack>
+        </Flex>
+        {user && (
+          <Button size='xs' onClick={handleLogout} isDisabled={busy} colorScheme='blue' variant='solid'>
+            {busy ? 'Signing out…' : 'Logout'}
+          </Button>
+        )}
+      </Flex>
+    </Box>
   );
 }
