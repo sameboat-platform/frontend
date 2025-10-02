@@ -6,6 +6,9 @@ const FRIENDLY: Record<string, string> = {
     EMAIL_EXISTS: "An account with this email already exists.",
     SESSION_EXPIRED: "Your session expired. Please sign in again.",
     UNAUTHORIZED: "You are not authorized. Please sign in.",
+    VALIDATION_ERROR: "Please fix the highlighted form fields and try again.",
+    INTERNAL_ERROR: "Server error. Please try again in a moment.",
+    UNKNOWN_ERROR: "Unexpected error. Please retry.",
 };
 
 export interface BackendAuthErrorPayload {
