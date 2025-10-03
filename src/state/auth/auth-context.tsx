@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback<AuthStore['login']>(async (email, password) => {
     const controller = new AbortController();
     setStatus('loading');
-    console.log("Attempting login...");
+    if (import.meta.env.DEV) console.debug("[auth] Attempting login...");
     clearError();
     let success = false;
     try {
