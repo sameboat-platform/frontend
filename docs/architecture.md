@@ -6,6 +6,7 @@ Planning references:
 
 -   Week 3 Checklist (`week-3-plan-checklist.md`) – status & metrics for auth/UI sprint.
 -   Week 4 Draft (`week-4-plan-draft.md`) – proposed quality & resilience objectives.
+-   Developer Workflow Checklist (`developer-workflow-checklist.md`) – end-to-end contribution SOP.
 
 ## Runtime Flow
 
@@ -47,7 +48,10 @@ Planning references:
 ## Build & CI
 
 -   Command chain: `npm run build` → `tsc -b` (type check only) → `vite build` (bundle & optimize).
--   GitHub Actions runs the same sequence on Node 20.
+-   CI pipeline order: lint → typecheck → test (Vitest, coverage ≥50%) → changelog check → build → artifacts.
+-   Changelog enforcement: script fails CI if source changes without `CHANGELOG.md` update.
+-   Conventional commits enforced locally via Husky + commitlint.
+-   Release automation script (`npm run release`) bumps version, migrates `[Unreleased]`, updates diff links, commits (+ optional tag).
 
 ## Extension Points
 
@@ -58,6 +62,7 @@ Planning references:
 | Telemetry        | Runtime debug panel (dev only)           | Expand to include latency, feature flags       |
 | Forms            | Chakra primitives                        | Extract form schema validation layer (Zod)     |
 | Health checks    | Interval polling                         | Pause-on-error, exponential backoff, SSE or WS |
+| Tooling pipeline | Lint + tests + release script            | Add test-change guards, auto PR labeling       |
 
 ## Non-Goals (Current Phase)
 
@@ -84,3 +89,4 @@ Repository relocated: `ArchILLtect/sameboat-frontend` → `sameboat-platform/fro
 -   Floating dev overlay: health + auth probe results (last 25) with cumulative error count.
 -   Copy helpers for API base & user ID.
 -   Collapse/expand with motion respecting reduced motion preferences.
+-   (Planned) Integration with future feature-flag / backoff states.
