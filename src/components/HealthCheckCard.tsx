@@ -36,8 +36,8 @@ export function HealthCheckCard({
     try {
       const data = await api<unknown>(path);
       setStatus('ok');
-      if (isHealthResponse(data) && typeof (data as any).status === 'string' && (data as any).status.length > 0) {
-        setMessage(`status: ${(data as any).status}`);
+      if (isHealthResponse(data) && typeof data.status === 'string' && data.status.length > 0) {
+        setMessage(`status: ${data.status}`);
       } else {
         setMessage('Backend responded ✔');
       }

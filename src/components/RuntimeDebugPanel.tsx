@@ -11,7 +11,8 @@ interface NetProbe {
   ts: number;
 }
 
-interface ProbeHistoryEntry extends NetProbe {}
+// Separate type alias (was empty interface – flagged by lint rule)
+type ProbeHistoryEntry = NetProbe;
 
 // Simple dev-only floating panel with auth + network info.
 export default function RuntimeDebugPanel() {
@@ -131,7 +132,10 @@ export default function RuntimeDebugPanel() {
             </Tooltip>
             {!bootstrapped && (
               <Tooltip label='Force refresh (StrictMode remount)'>
-                <IconButton aria-label='force refresh' icon={<ViewOffIcon />} size='xs' variant='ghost' onClick={() => { (window as any).__AUTH__?.refresh?.(); }} />
+                <IconButton aria-label='force refresh' icon={<ViewOffIcon />} size='xs' variant='ghost' onClick={() => {
+                  const w = window as unknown as { __AUTH__?: { refresh?: () => void } };
+                  w.__AUTH__?.refresh?.();
+                }} />
               </Tooltip>
             )}
             <Tooltip label='Collapse panel'>

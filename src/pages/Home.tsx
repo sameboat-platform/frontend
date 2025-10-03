@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { API_BASE, api } from "../lib/api";
 import { Alert, AlertIcon, Badge, Code, Card, CardHeader, CardBody, Heading, Flex, Spacer, Button, HStack, Text, Skeleton, SkeletonText, Box, Container, Link, Stack } from '@chakra-ui/react';
@@ -21,7 +21,7 @@ export default function Home() {
   })();
   const checkStartRef = useRef<number | null>(null);
 
-  const runHealthCheck = async () => {
+  const runHealthCheck = useCallback(async () => {
     // For subsequent runs (not the very first idle state) show a transient checking skeleton
     setStatus(prev => prev === 'idle' ? prev : 'checking');
     checkStartRef.current = Date.now();
@@ -43,14 +43,14 @@ export default function Home() {
       const delay = status === 'checking' && elapsed < MIN_CHECKING_MS ? MIN_CHECKING_MS - elapsed : 0;
       setTimeout(() => setLastChecked(Date.now()), delay);
     }
-  };
+  }, [status]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => { if (!cancelled) await runHealthCheck(); })();
     const id = setInterval(() => { if (!cancelled) runHealthCheck(); }, intervalMs);
     return () => { cancelled = true; clearInterval(id); };
-  }, [intervalMs]);
+  }, [intervalMs, runHealthCheck]);
 
   return (
     <Container maxW='2xl' py={8}>

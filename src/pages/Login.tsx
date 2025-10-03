@@ -27,11 +27,10 @@ export default function Login() {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
-    const ok = await login(email, password);
-    console.log(ok);
+  const ok = await login(email, password);
     if (ok) {
       // If we came from a protected route, honor it; otherwise go home
-      const from = (location.state as any)?.from?.pathname;
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
       const target = from && from !== '/login' ? from : '/';
       navigate(target, { replace: true });
       return;

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthStore, AuthUser } from './types';
 import { api } from '../../lib/api';
@@ -16,20 +17,20 @@ function isRawUser(v: unknown): v is RawUser {
   return !!v && typeof v === 'object' && 'id' in v && 'email' in v;
 }
 function extractRawUser(v: unknown): RawUser | undefined {
-  if (isRawUser(v)) return normalizeUser(v as any);
-  if (v && typeof v === 'object' && 'user' in v) {
-    const inner = (v as any).user;
+  if (isRawUser(v)) return normalizeUser(v);
+  if (v && typeof v === 'object' && 'user' in (v as Record<string, unknown>)) {
+    const inner = (v as Record<string, unknown>).user;
     if (isRawUser(inner)) return normalizeUser(inner);
   }
   return undefined;
 }
-function normalizeUser(u: any): RawUser {
+function normalizeUser(u: { id: string; email: string; roles?: unknown; role?: unknown; displayName?: unknown; name?: unknown }): RawUser {
   const roles = !u.roles && typeof u.role === 'string'
     ? [u.role]
     : Array.isArray(u.roles)
-      ? u.roles
-      : u.roles ? [u.roles] : undefined;
-  return { id: u.id, email: u.email, roles, displayName: u.displayName ?? u.name ?? null };
+      ? u.roles.filter(r => typeof r === 'string') as string[]
+      : typeof u.roles === 'string' ? [u.roles] : undefined;
+  return { id: u.id, email: u.email, roles, displayName: (typeof u.displayName === 'string' ? u.displayName : (typeof u.name === 'string' ? u.name : null)) };
 }
 
 const AuthContext = createContext<AuthStore | null>(null);
@@ -174,8 +175,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) {
         let code: string | undefined; let fallback: string | undefined;
-        if (e && typeof e === 'object' && 'message' in e) fallback = String((e as any).message);
-        if (isBackendAuthErrorPayload((e as any).cause)) code = (e as any).cause.error;
+        if (e && typeof e === 'object' && 'message' in e) fallback = String((e as { message: unknown }).message);
+        // structured backend payload attached as cause
+        if (e && typeof e === 'object' && 'cause' in e && isBackendAuthErrorPayload((e as { cause?: unknown }).cause)) {
+          code = (e as { cause?: { error?: string } }).cause?.error;
+        }
         if (mountedRef.current) recordError(code || 'BAD_CREDENTIALS', fallback);
       }
       success = false;
@@ -211,8 +215,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) {
         let code: string | undefined; let fallback: string | undefined;
         if (e && typeof e === 'object') {
-          if ('message' in e) fallback = String((e as any).message);
-          if (isBackendAuthErrorPayload((e as any).cause)) code = (e as any).cause.error;
+          if ('message' in e) fallback = String((e as { message: unknown }).message);
+          if ('cause' in e && isBackendAuthErrorPayload((e as { cause?: unknown }).cause)) {
+            code = (e as { cause?: { error?: string } }).cause?.error;
+          }
         }
         if (mountedRef.current) recordError(code || 'UNKNOWN_ERROR', fallback);
       }
@@ -230,10 +236,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Ignore errors
     } finally {
-      if (!mountedRef.current) return;
-      setUser(null);
-      setStatus('idle');
-      setLastFetched(undefined);
+      if (mountedRef.current) {
+        setUser(null);
+        setStatus('idle');
+        setLastFetched(undefined);
+      }
     }
   }, [clearError]);
 
@@ -275,7 +282,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Expose for deep debugging (dev only). Allows manual inspection: window.__AUTH__
   if (import.meta.env.DEV && typeof window !== 'undefined') {
-    (window as any).__AUTH__ = value;
+    (window as unknown as { __AUTH__?: AuthStore }).__AUTH__ = value;
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

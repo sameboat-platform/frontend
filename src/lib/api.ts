@@ -40,7 +40,6 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     const url = buildUrl(path);
     if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
         // concise dev log (avoid dumping the whole body as an object wrapper)
-        // eslint-disable-next-line no-console
         console.log(url);
     }
     const res = await fetch(url, {
@@ -53,7 +52,6 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     });
     if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
         // concise dev log (avoid dumping the whole body as an object wrapper)
-        // eslint-disable-next-line no-console
         console.log(`[api] ${init.method || "GET"} ${url} -> ${res.status}`);
     }
     const isJson = (res.headers.get("content-type") || "").includes(
@@ -69,7 +67,10 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
             `${res.status} ${res.statusText}` +
                 (payload?.message ? ` — ${payload.message}` : "")
         );
-        if (payload) (err as any).cause = payload; // surface structured error to callers
+        if (payload) {
+            // augment error with structured cause without using `any`
+            (err as Error & { cause?: unknown }).cause = payload;
+        }
         throw err;
     }
     if (res.status === 204) {

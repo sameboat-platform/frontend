@@ -29,7 +29,7 @@ export default function Register() {
     setSubmitting(true);
     const ok = await register(email, password);
     if (ok) {
-      const from = (location.state as any)?.from?.pathname;
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
       const target = from && from !== '/login' ? from : '/';
       navigate(target, { replace: true });
       return;

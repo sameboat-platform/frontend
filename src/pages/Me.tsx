@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom';
 export default function Me() {
   const { user, logout, status } = useAuth();
   const navigate = useNavigate();
+  const accent = useColorModeValue('gray.50', 'whiteAlpha.50');
   const busy = status === 'loading';
   if (!user) return null; // ProtectedRoute handles redirect; guard for safety.
-  const accent = useColorModeValue('gray.50', 'whiteAlpha.50');
   return (
     <Box maxW='xl' mx='auto' px={6} py={8}>
       <Card variant='outline' overflow='hidden'>
