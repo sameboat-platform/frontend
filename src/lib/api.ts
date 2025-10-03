@@ -4,28 +4,92 @@ const PROD_DEFAULT = "https://api-sameboat.onrender.com";
 const DEV_FALLBACK = "http://localhost:8080";
 
 export const API_BASE =
-    import.meta.env.VITE_API_BASE_URL ??
-    (import.meta.env.DEV ? DEV_FALLBACK : PROD_DEFAULT);
+    (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(
+        /\/$/,
+        ""
+    ) ?? (import.meta.env.DEV ? DEV_FALLBACK : PROD_DEFAULT);
 
-function buildUrl(path: string): string {
+// If the backend already exposes /api/*, callers should pass paths WITH /api/*.
+// To avoid accidental double '/api/api', we collapse duplicate segments.
+function normalizeJoin(base: string, rel: string): string {
+    const b = base.replace(/\/$/, "");
+    const r = rel.startsWith("/") ? rel : `/${rel}`;
+    // Collapse any repeated '/api' boundary: e.g. '.../api' + '/api/actuator/health'
+    return (b + r).replace(/\/api(?:\/api)+/g, "/api");
+}
+
+export function buildUrl(path: string): string {
     if (/^https?:\/\//i.test(path)) return path; // already absolute
-    const base = API_BASE.replace(/\/$/, "");
-    const rel = path.startsWith("/") ? path : `/${path}`;
-    return base + rel;
+    return normalizeJoin(API_BASE, path);
+}
+
+interface ErrorPayload {
+    error?: string;
+    message?: string;
+}
+function tryParseErrorPayload(text: string): ErrorPayload | undefined {
+    if (!text) return undefined;
+    try {
+        return JSON.parse(text);
+    } catch {
+        return undefined;
+    }
 }
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     const url = buildUrl(path);
+    if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
+        // concise dev log (avoid dumping the whole body as an object wrapper)
+        console.debug(url);
+    }
     const res = await fetch(url, {
+        credentials: "include", // ensure cookies (SBSESSION) are sent
         ...init,
         headers: {
             "Content-Type": "application/json",
             ...(init.headers || {}),
         },
     });
+    if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
+        // concise dev log (avoid dumping the whole body as an object wrapper)
+        console.log(`[api] ${init.method || "GET"} ${url} -> ${res.status}`);
+    }
+    const isJson = (res.headers.get("content-type") || "").includes(
+        "application/json"
+    );
+    if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
+        console.debug("[api] request:", { url, init });
+    }
     if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(`${res.status} ${res.statusText} — ${text}`);
+        const payload = tryParseErrorPayload(text);
+        const err = new Error(
+            `${res.status} ${res.statusText}` +
+                (payload?.message ? ` — ${payload.message}` : "")
+        );
+        if (payload) {
+            // augment error with structured cause without using `any`
+            (err as Error & { cause?: unknown }).cause = payload;
+        }
+        throw err;
     }
-    return res.json() as Promise<T>;
+    if (res.status === 204) {
+        return undefined as unknown as T;
+    }
+    if (!isJson) {
+        const text = await res.text().catch(() => "");
+        return text as unknown as T;
+    }
+    try {
+        if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
+            console.debug("[api] response JSON:");
+        }
+        return (await res.json()) as T;
+    } catch {
+        // Fallback to text parse if JSON parsing fails unexpectedly
+        const txt = await res.text().catch(() => "");
+        return (
+            txt ? tryParseErrorPayload(txt) ?? (txt as unknown) : undefined
+        ) as T;
+    }
 }
