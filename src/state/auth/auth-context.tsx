@@ -40,6 +40,8 @@ const AuthContext = createContext<AuthStore | null>(null);
 // leading to duplicate unauthenticated 401s in the console (plus the debug panel probe = 3).
 // Track a module-level flag so we only perform the initial refresh exactly once per page load.
 let didInitialBootstrapAttempt = false;
+// Vitest exposes VITEST env var; we detect it without using `any` casts
+const isVitest = typeof process !== 'undefined' && Boolean((process as unknown as { env?: Record<string, unknown> }).env?.VITEST);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -51,34 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const bootstrappedRef = useRef(false);
   const mountedRef = useRef(false);
-  console.debug('[auth] mounted', { mountedRef: mountedRef.current });
+  if (import.meta.env.DEV && !isVitest) console.debug('[auth] mounted', { mountedRef: mountedRef.current });
   useEffect(() => {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
-  console.debug('[auth] mounted', { mountedRef: mountedRef.current });
+  if (import.meta.env.DEV && !isVitest) console.debug('[auth] mounted', { mountedRef: mountedRef.current });
 
-  // Heartbeat debug: log every second until bootstrapped flips (dev only)
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    if (bootstrappedRef.current) return;
-    let ticks = 0;
-    const id = setInterval(() => {
-      ticks++;
-      if (bootstrappedRef.current) { clearInterval(id); return; }
-      console.debug('[auth][hb]', { tick: ticks, status, bootstrappedRef: bootstrappedRef.current });
-      if (ticks >= 8) { // after ~8s force flip for visibility
-        bootstrappedRef.current = true;
-        if (mountedRef.current) {
-          setBootstrapped(true);
-          setStatus(prev => (prev === 'loading' ? 'idle' : prev));
-          console.warn('[auth][hb] forced flip after 8 ticks (bootstrapped=true)');
-        }
-        clearInterval(id);
-      }
-    }, 1000);
-    return () => clearInterval(id);
-  }, [status]);
+  // Removed previous heartbeat interval that logged every second until bootstrap; fail-safe timeout below remains sufficient.
 
   // Normalize & record error state
   const recordError = useCallback((code: string | undefined, fallback?: string) => {
@@ -100,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const controller = new AbortController();
     let data: unknown | undefined;
     let hadError = false;
-    if (import.meta.env.DEV) console.debug('[auth] refresh() begin', { ME_PATH });
+  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() begin', { ME_PATH });
     setStatus(prev => (prev === 'idle' ? 'loading' : prev));
     try {
       data = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include', signal: controller.signal });
@@ -109,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) {
         // treat as unauthenticated on first run, error thereafter
         if (!bootstrappedRef.current) {
-          if (import.meta.env.DEV) console.debug('[auth] refresh() unauthenticated (expected first run)');
+          if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() unauthenticated (expected first run)');
           if (mountedRef.current) {
             setUser(null);
             setStatus('idle');
@@ -120,10 +102,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             recordError('UNAUTHORIZED');
           }
-          if (import.meta.env.DEV) console.debug('[auth] refresh() error after bootstrap', e);
+          if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() error after bootstrap', e);
         }
       } else {
-        if (import.meta.env.DEV) console.debug('[auth] refresh() aborted');
+  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() aborted');
       }
     }
     if (!hadError && mountedRef.current) {
@@ -133,22 +115,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setStatus('authenticated');
         setLastFetched(Date.now());
         clearError();
-        if (import.meta.env.DEV) console.debug('[auth] refresh() success (user)');
+  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() success (user)');
       } else {
         setUser(null);
         setStatus('idle');
-        if (import.meta.env.DEV) console.debug('[auth] refresh() success (no user)');
+  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() success (no user)');
       }
     }
     bootstrappedRef.current = true;
     if (mountedRef.current) setBootstrapped(true);
-    if (import.meta.env.DEV) console.debug('[auth] refresh() end: bootstrapped = true');
+  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() end: bootstrapped = true');
   }, [clearError, recordError]);
 
   const login = useCallback<AuthStore['login']>(async (email, password) => {
     const controller = new AbortController();
     setStatus('loading');
-    if (import.meta.env.DEV) console.debug("[auth] Attempting login...");
+  if (import.meta.env.DEV && !isVitest) console.debug("[auth] Attempting login...");
     clearError();
     let success = false;
     try {
@@ -248,19 +230,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!didInitialBootstrapAttempt) {
       didInitialBootstrapAttempt = true;
-      if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_BOOTSTRAP) console.debug('[auth] initial bootstrap refresh()');
+  if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_BOOTSTRAP && !isVitest) console.debug('[auth] initial bootstrap refresh()');
       refresh();
-    } else if (import.meta.env.DEV) {
+  } else if (import.meta.env.DEV && !isVitest) {
       console.debug('[auth] skipped duplicate bootstrap refresh (StrictMode remount)');
     }
     // Safety fallback: ensure bootstrapped flips after 5s even if refresh hangs
     const failSafe = setTimeout(() => {
-      if (import.meta.env.DEV) console.debug('[auth] refresh() timeout fail-safe triggered');
+  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() timeout fail-safe triggered');
       if (!bootstrappedRef.current && mountedRef.current) {
         bootstrappedRef.current = true;
         setBootstrapped(true);
         setStatus(prev => (prev === 'loading' ? 'idle' : prev));
-        if (import.meta.env.DEV) console.debug('[auth] refresh() timeout fail-safe triggered');
+  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() timeout fail-safe triggered');
       }
     }, 5000);
     return () => clearTimeout(failSafe);
