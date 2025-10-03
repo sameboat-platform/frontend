@@ -104,6 +104,49 @@ Notes:
 | Tests (baseline) | Partial      | Need broader auth flow coverage.                |
 | Docs             | Updated      | README + architecture reflect current system.   |
 
+## Completion Blockers (Core & Enhancements)
+
+Focused list of concrete gaps preventing 100% completion of Core Goals and Enhancements.
+
+### Core Goal: "Tests: protected + form validation" (Partial)
+
+Outstanding granular items:
+
+-   Add success-path auth test (login → redirect to intended route when `location.state.from` is set).
+-   Add backend error path test for `BAD_CREDENTIALS` mapping (assert Chakra Alert shows friendly message).
+-   Add session expiry simulation test: authenticated → subsequent `/api/me` 401 triggers mapped error & redirect handling.
+-   Add wrapped user normalization test (response `{ user: { ... } }` → context user normalized with `roles[]`).
+-   Add minimal refresh failure timeout test (bootstrap fail-safe sets `bootstrapped` after timeout).
+
+### Core Goal: "CI runs tests" (Partial)
+
+Outstanding granular items:
+
+-   Confirm CI workflow consistently executes `npm run test` (recent changes added this; needs validation run on main).
+-   Enforce test execution as required status in branch protection (GitHub settings, manual admin step).
+-   (Planned) Add coverage threshold enforcement (see TODO) to raise bar for future partial credit removal.
+
+### Enhancement (Pending): "Pause-on-error health idea"
+
+Outstanding granular items:
+
+-   Implement failure streak tracking for health polling.
+-   Introduce pause condition after N consecutive failures (configurable; start with 3).
+-   UI control to manually resume polling.
+-   Optional exponential backoff (document strategy if deferred).
+
+### Cross-Cutting Finishing Touches
+
+-   Reduced motion global flag (applies to route & panel animations; currently only debug panel respects preference).
+-   `.env.example` scaffold (onboarding clarity and to finalize environment documentation).
+-   Copy-to-clipboard user ID button on Me page (developer convenience) – minor but listed to close enhancement polish.
+-   Identicon fallback for avatar (visual polish; low risk, can defer if time constrained).
+-   Visibility-based session stale refresh (long-lived tab UX) – not required for 100% of current plan but improves robustness.
+
+### Clarification
+
+Deferred items remain intentionally out-of-scope for Week 3 and do not count against completion metrics.
+
 ## Auth Flow Summary (Condensed)
 
 1. App mounts → guarded `refresh()` (single run) → sets `bootstrapped`.
