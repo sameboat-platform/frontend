@@ -9,10 +9,10 @@ export default defineConfig({
         coverage: {
             reporter: ["text", "lcov"],
             thresholds: {
-                lines: 50,
-                functions: 50,
-                statements: 50,
-                branches: 50,
+                lines: process.env.COVERAGE_LINES ? parseInt(process.env.COVERAGE_LINES, 10) : 50,
+                functions: process.env.COVERAGE_FUNCTIONS ? parseInt(process.env.COVERAGE_FUNCTIONS, 10) : 50,
+                statements: process.env.COVERAGE_STATEMENTS ? parseInt(process.env.COVERAGE_STATEMENTS, 10) : 50,
+                branches: process.env.COVERAGE_BRANCHES ? parseInt(process.env.COVERAGE_BRANCHES, 10) : 50,
             },
         },
     },
