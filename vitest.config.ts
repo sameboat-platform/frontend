@@ -8,6 +8,12 @@ export default defineConfig({
         css: true,
         coverage: {
             reporter: ["text", "lcov"],
+            thresholds: {
+                lines: 50,
+                functions: 50,
+                statements: 50,
+                branches: 50,
+            },
         },
     },
 });
