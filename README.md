@@ -11,6 +11,7 @@ SameBoat Frontend is a lightweight Vite + React 19 single-page application scaff
 -   Week 3 Progress Checklist: `docs/week-3-plan-checklist.md`
 -   Week 4 Draft Plan: `docs/week-4-plan-draft.md`
 -   Changelog: `CHANGELOG.md` (see [Unreleased] section for in-flight changes)
+-   Developer Workflow Checklist: `docs/developer-workflow-checklist.md`
 
 ### Versioning
 
@@ -24,8 +25,10 @@ Pre-1.0 releases use `0.x.y`; breaking changes may occur between minor bumps. Ea
 | UI library       | React 19 + Chakra UI (selective)   | React for core + incremental Chakra adoption (cards, forms)     |
 | Transpilation    | SWC via `@vitejs/plugin-react-swc` | Faster than Babel for local dev                                 |
 | Language         | TypeScript ^5.8.0 (strict)         | `noUncheckedSideEffectImports`, `verbatimModuleSyntax` enforced |
-| Linting          | ESLint flat config                 | React Hooks + React Refresh plugins                             |
-| CI               | GitHub Actions                     | Node 20, type-check + build                                     |
+| Linting          | ESLint flat config + plugins       | React Hooks, Refresh, a11y, import sorting                      |
+| Conventional commits | commitlint + Husky hooks       | Enforces `type(scope?): subject` style                          |
+| CI               | GitHub Actions                     | Lint, type, tests (coverage ≥50%), changelog check, build       |
+| Release utility  | Custom script `npm run release`    | Bumps version + moves `[Unreleased]` in CHANGELOG               |
 
 ## Project Structure
 
@@ -51,6 +54,7 @@ Add components under `src/components/` and import into pages or `App.tsx`.
 3. Type-first build: `npm run build` (runs `tsc -b && vite build`)
 4. Preview production bundle: `npm run preview`
 5. Lint before commit: `npm run lint`
+6. (Optional) Auto hooks: Husky runs lint/tests/commitlint pre-push / commit.
 
 ## Environment Variables
 
@@ -134,12 +138,14 @@ Remove or disable this panel for production builds (guarded by `import.meta.env.
 -   Environment: jsdom
 -   Libraries: `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`
 
-### Running Tests
+### Running Tests & Coverage
 
 ```bash
-npm run test          # Single run
-npx vitest watch      # (Optional) Interactive watch mode
+npm run test          # Single run with coverage thresholds (50%)
+npx vitest watch      # Interactive watch (coverage summary on exit)
 ```
+
+Coverage thresholds (initial baseline): lines/functions/statements/branches ≥ 50%. CI fails below.
 
 ### Test Locations
 
@@ -186,9 +192,12 @@ vi.spyOn(global, "fetch").mockResolvedValueOnce(
 
 ## Quality Gates
 
--   TypeScript must be clean (build runs `tsc -b`).
--   ESLint must pass (`npm run lint`).
--   CI workflow: `.github/workflows/frontend-ci.yml` – mirrors build locally; keep Node 20 parity.
+-   TypeScript clean (build runs `tsc -b`).
+-   ESLint passes (`npm run lint`).
+-   Tests pass with coverage ≥ thresholds.
+-   Changelog updated when source/docs change (`npm run changelog:check`).
+-   Conventional commit style enforced (Husky + commitlint).
+-   CI replicates local gates: lint → type → tests → changelog check → build.
 
 ## Contributing (Quick Summary)
 
@@ -217,7 +226,10 @@ npm run build
 -   dev – start Vite dev server
 -   build – production build
 -   preview – preview production build locally
--   test – run Vitest suite
+-   test – run Vitest suite (with coverage thresholds)
+-   release – run automated version + changelog update script
+-   changelog:check – enforce changelog entry presence
+-   lint / lint:fix – run (and optionally fix) ESLint
 
 ## Repository Migration
 
