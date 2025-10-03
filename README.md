@@ -50,6 +50,33 @@ src/
 public/             # Static assets served at root (/favicon, /vite.svg)
 ```
 
+### Health Monitoring Component
+
+`HealthCheckCard` centralizes backend liveness/health polling with:
+
+-   Configurable interval via prop or `VITE_HEALTH_REFRESH_MS`.
+-   Minimum skeleton duration to reduce UI flicker.
+-   Manual refresh button.
+-   Status + message extraction from Spring Boot Actuator style responses.
+-   Stable polling loop (no re-subscribe on status changes).
+
+Usage:
+
+```tsx
+import HealthCheckCard from './components/HealthCheckCard';
+
+export default function Home() {
+    return (
+        <div>
+            {/* other content */}
+            <HealthCheckCard />
+        </div>
+    );
+}
+```
+
+If you need a one-off health check somewhere else, prefer reusing this component to avoid duplicate intervals.
+
 Add components under `src/components/` and import into pages or `App.tsx`.
 
 ## Development Workflow

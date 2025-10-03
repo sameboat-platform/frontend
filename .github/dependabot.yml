@@ -1,5 +1,43 @@
 version: 2
 updates:
+  # Security critical/runtime dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "06:00"
+    labels: ["deps", "security"]
+    groups:
+      security-critical:
+        applies-to: security-updates
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+
+  # Dev & tooling (tests, lint, build tooling) – batched weekly
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "07:00"
+    labels: ["deps", "tooling"]
+    groups:
+      dev-tooling:
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "vitest"
+          - "@testing-library/*"
+          - "@vitejs/*"
+          - "vite"
+          - "typescript*"
+    ignore:
+      # Example: pin major for stability; adjust as policy develops
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+version: 2
+updates:
   # Keep npm packages up to date
   - package-ecosystem: npm
     directory: "/"           # location of package.json
