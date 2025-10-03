@@ -7,7 +7,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ## [Unreleased]
 
 ### Added
-- Nothing yet.
+- SECURITY policy (`SECURITY.md`).
+- MIT license file (`LICENSE`).
+- Coverage badge workflow (`coverage-badge.yml`) generating `coverage.svg` on main pushes.
 
 ### Changed
 - Nothing yet.
@@ -16,10 +18,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - Nothing yet.
 
 ### Documentation
-- Nothing yet.
+- Added minimal security policy document.
+- README badges (release, coverage, security, license). 
+
+### Security
+- Bump esbuild to 0.25.10 resolving moderate advisory.
+- Upgrade vitest to 3.2.4 (dev dependency; no runtime impact).
 
 ### Internal
-- Nothing yet.
+- Removed legacy .eslintignore by migrating ignore patterns to flat config.
+- Silenced auth debug logs during Vitest via `isVitest` guard.
+- Automated coverage badge generation.
 
 ### Notes
 - Nothing yet.
