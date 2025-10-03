@@ -32,6 +32,12 @@
 -   Add a custom CI step that fails if no test files were touched for a PR containing `feat:` or `fix:` commits.
 -   Script/guard to fail if a `feat:` commit lands without any matching diff in `src/__tests__/` (heuristic; allow override via `[skip-test-guard]`).
 -   GitHub Action to auto-assign PR label based on first conventional commit type (feat/fix/docs/chore/refactor/test/perf).
+    
+### Dependency / Security Automation
+
+-   Create Dependabot config groups separating critical/security deps from test/tooling deps (distinct PR labels & visibility).
+-   Add CI job for dependency audit (e.g. `npm audit --audit-level=moderate` or Snyk) highlighting severity delta between main and PR.
+-   Add GitHub Action guard: fail Dependabot PR if it modifies > N (configurable) devDependencies without a CHANGELOG entry under Security or Internal.
 
 ## Notes
 

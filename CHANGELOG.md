@@ -7,19 +7,35 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ## [Unreleased]
 
 ### Added
-- Nothing yet.
+- SECURITY policy (`SECURITY.md`).
+- MIT license file (`LICENSE`).
+- Coverage badge workflow (`coverage-badge.yml`) generating `coverage.svg` on main pushes.
+- `.env.example` template enumerating supported environment variables.
+- Dependabot configuration skeleton (`.github/dependabot.yml`) grouping security vs tooling updates.
+- Smoke test for `HealthCheckCard` component.
 
 ### Changed
-- Nothing yet.
+- Replaced ad-hoc inline Home page health logic with reusable `<HealthCheckCard />` component.
+- Removed transient auth bootstrap "heartbeat" interval (was only for earlier debugging) to reduce console noise.
+- Stabilized health polling implementation (single interval; eliminated status-driven re-subscribe loop).
 
 ### Fixed
-- Nothing yet.
+- Excessive `/actuator/health` polling spam caused by effect dependency loop and duplicate Home page implementation.
 
 ### Documentation
-- Nothing yet.
+- Added minimal security policy document.
+- README badges (release, coverage, security, license). 
+
+### Security
+- Bump esbuild to 0.25.10 resolving moderate advisory.
+- Upgrade vitest to 3.2.4 (dev dependency; no runtime impact).
 
 ### Internal
-- Nothing yet.
+- Removed legacy .eslintignore by migrating ignore patterns to flat config.
+- Silenced auth debug logs during Vitest via `isVitest` guard.
+- Automated coverage badge generation.
+- Refactored health polling to use stable callback + ref tracking (`statusRef`) preventing rapid interval churn.
+- Consolidated health checks (Home now delegates to `HealthCheckCard`).
 
 ### Notes
 - Nothing yet.

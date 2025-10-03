@@ -1,0 +1,60 @@
+name: Coverage Badge
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  coverage-badge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: |
+          npm test -- --coverage --reporter=default
+
+      - name: Parse coverage percentage
+        id: coverage
+        run: |
+          # Look for line coverage in lcov report or summary
+          PCT=$(grep -E "^Statements" coverage/coverage-summary.json || true)
+          if [ -f coverage/coverage-summary.json ]; then
+            PCT=$(node -e "console.log(require('./coverage/coverage-summary.json').total.statements.pct)")
+          else
+            echo "coverage summary not found" && exit 1
+          fi
+          echo "coverage=$PCT" >> $GITHUB_OUTPUT
+
+      - name: Generate badge
+        run: |
+          PCT=${{ steps.coverage.outputs.coverage }}
+          COLOR=yellow
+          if [ "${PCT%.*}" -ge 80 ]; then COLOR=green; elif [ "${PCT%.*}" -ge 65 ]; then COLOR=yellowgreen; elif [ "${PCT%.*}" -lt 50 ]; then COLOR=red; fi
+          echo "Generating badge for $PCT% -> $COLOR"
+          mkdir -p .github/badges
+          cat <<'SVG' > .github/badges/coverage.svg
+          <svg xmlns='http://www.w3.org/2000/svg' width='120' height='20' role='img' aria-label='coverage: $PCT%'><linearGradient id='s' x2='0' y2='100%'><stop offset='0' stop-color='#bbb' stop-opacity='.1'/><stop offset='1' stop-opacity='.1'/></linearGradient><mask id='m'><rect width='120' height='20' rx='3' fill='#fff'/></mask><g mask='url(#m)'><rect width='62' height='20' fill='#555'/><rect x='62' width='58' height='20' fill='$COLOR'/><rect width='120' height='20' fill='url(#s)'/></g><g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='11'><text x='31' y='14'>coverage</text><text x='90' y='14'>$PCT%</text></g></svg>
+          SVG
+
+      - name: Commit badge
+        run: |
+          git config user.name 'github-actions'
+          git config user.email 'actions@github.com'
+          git add .github/badges/coverage.svg
+          git commit -m "chore: update coverage badge" || echo "No changes"
+          git push

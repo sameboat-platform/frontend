@@ -26,6 +26,9 @@ export function HealthCheckCard({
     return Number.isFinite(n) && n > 1000 ? n : 30000;
   })();
   const [status, setStatus] = useState<HealthState>('idle');
+  // Track latest status in a ref so the polling callback doesn't re-subscribe every status change
+  const statusRef = useRef<HealthState>('idle');
+  useEffect(() => { statusRef.current = status; }, [status]);
   const [message, setMessage] = useState('');
   const [lastChecked, setLastChecked] = useState<number | undefined>();
   const checkStartRef = useRef<number | null>(null);
@@ -48,14 +51,15 @@ export function HealthCheckCard({
     } finally {
       const end = Date.now();
       const elapsed = checkStartRef.current ? end - checkStartRef.current : 0;
-      const delay = status === 'checking' && elapsed < minSkeletonMs ? minSkeletonMs - elapsed : 0;
+      const delay = statusRef.current === 'checking' && elapsed < minSkeletonMs ? minSkeletonMs - elapsed : 0;
       setTimeout(() => setLastChecked(Date.now()), delay);
     }
-  }, [path, minSkeletonMs, status]);
+  }, [path, minSkeletonMs]);
 
   useEffect(() => { onStatusChange?.(status); }, [status, onStatusChange]);
 
   useEffect(() => {
+    // Run once on mount then on the interval; stable because runHealthCheck deps exclude status
     let cancelled = false;
     (async () => { if (!cancelled) await runHealthCheck(); })();
     const id = setInterval(() => { if (!cancelled) runHealthCheck(); }, envInterval);
@@ -63,13 +67,13 @@ export function HealthCheckCard({
   }, [envInterval, runHealthCheck]);
 
   return (
-    <Card>
+  <Card data-testid='health-card'>
       <CardHeader py={3}>
         <Flex align='center' gap={3}>
           <Heading as='h2' size='sm'>Backend Health</Heading>
           <Spacer />
-          {status === 'idle' && <Badge colorScheme='gray'>Checking</Badge>}
           {status === 'ok' && <Badge colorScheme='green'>OK</Badge>}
+          {status === 'idle' && <Badge colorScheme='gray'>Checking</Badge>}
           {status === 'error' && <Badge colorScheme='red'>Error</Badge>}
         </Flex>
       </CardHeader>
