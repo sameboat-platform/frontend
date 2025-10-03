@@ -40,7 +40,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     const url = buildUrl(path);
     if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
         // concise dev log (avoid dumping the whole body as an object wrapper)
-        console.log(url);
+        console.debug(url);
     }
     const res = await fetch(url, {
         credentials: "include", // ensure cookies (SBSESSION) are sent
