@@ -34,7 +34,7 @@ export function HealthCheckCard({
   const checkStartRef = useRef<number | null>(null);
 
   const runHealthCheck = useCallback(async () => {
-    setStatus('checking');
+    setStatus(prev => (prev === 'idle' ? prev : 'checking'));
     checkStartRef.current = Date.now();
     try {
       const data = await api<unknown>(path);
