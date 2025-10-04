@@ -42,3 +42,37 @@
 ## Notes
 
 Add new sections here as areas expand (e.g., Testing, Performance, Accessibility).
+
+
+### Potential workflow--for badge coverage updating:
+
+name: Update Badge
+on:
+  workflow_run:
+    workflows: ["CI"]   # or on: push: branches: [main]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  badge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # TODO: generate/update your badge/readme here
+      - run: |
+          ./scripts/update-badge.sh
+          git status --porcelain || true
+
+      # Use peter-evans/create-pull-request to open/refresh a PR
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(badge): update status badge"
+          branch: badges/auto
+          title: "chore(badge): update status badge"
+          body: "Automated badge update."
+          signoff: false
+          delete-branch: false   # keep or auto-delete after merge if you prefer

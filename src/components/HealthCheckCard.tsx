@@ -37,9 +37,11 @@ export function HealthCheckCard({
   const [consecutiveFailures, setConsecutiveFailures] = useState(0);
   const [paused, setPaused] = useState(false);
   const intervalIdRef = useRef<number | null>(null);
+  const pausedRef = useRef<boolean>(false);
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
 
   const runHealthCheck = useCallback(async () => {
-    if (paused) return; // prevent background checks while paused
+    if (pausedRef.current) return; // prevent background checks while paused (ref avoids stale closure)
     setStatus(prev => (prev === 'idle' ? prev : 'checking'));
     checkStartRef.current = Date.now();
     try {
@@ -90,6 +92,8 @@ export function HealthCheckCard({
   }, [envInterval, runHealthCheck, paused]);
 
   const handleResume = useCallback(async () => {
+    // Flip paused synchronously via ref to allow immediate runHealthCheck without stale state
+    pausedRef.current = false;
     setPaused(false);
     setConsecutiveFailures(0);
     await runHealthCheck();

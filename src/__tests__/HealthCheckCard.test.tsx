@@ -26,7 +26,7 @@ describe('HealthCheckCard', () => {
     expect(await screen.findByText(/status: UP/i)).toBeInTheDocument();
   });
 
-  it('pauses after consecutive failures and resumes on click', async () => {
+  it('pauses after consecutive failures and resumes auto-polling', async () => {
     // First three fetches fail, then succeed
     vi.restoreAllMocks();
     const fail = new Response('bad', { status: 500, headers: { 'Content-Type': 'text/plain' } }) as unknown as Response;
@@ -35,21 +35,23 @@ describe('HealthCheckCard', () => {
       .mockResolvedValueOnce(fail)
       .mockResolvedValueOnce(fail)
       .mockResolvedValueOnce(fail)
+      .mockResolvedValueOnce(ok)
       .mockResolvedValueOnce(ok);
 
-  render(<HealthCheckCard intervalMs={100000} minSkeletonMs={0} failureThreshold={3} />);
+    // Use a long interval so background ticks don't interfere; trigger via Refresh
+    render(<HealthCheckCard intervalMs={60000} minSkeletonMs={0} failureThreshold={3} />);
 
-  // Initial mount triggers first failure; click refresh twice for 2 more
-  await screen.findByRole('alert'); // error alert present
-  const refreshBtn = screen.getByRole('button', { name: /refresh now/i });
-  fireEvent.click(refreshBtn);
-  fireEvent.click(refreshBtn);
+    // Initial mount triggers first failure; click refresh twice for the next two
+    await screen.findByRole('alert'); // error alert present
+    const refreshBtn = screen.getByRole('button', { name: /refresh now/i });
+    fireEvent.click(refreshBtn);
+    fireEvent.click(refreshBtn);
 
-  await waitFor(() => expect(screen.getByTestId('health-paused')).toBeInTheDocument());
-  expect(fetchSpy).toHaveBeenCalledTimes(3);
+    await waitFor(() => expect(screen.getByTestId('health-paused')).toBeInTheDocument());
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
 
     // Resume should trigger an immediate fetch and show healthy
-    fireEvent.click(screen.getByTestId('resume-btn'));
-    expect(await screen.findByText(/Healthy/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByTestId('resume-btn'));
+  await waitFor(() => expect(screen.getByText(/Healthy/i)).toBeInTheDocument());
   });
 });

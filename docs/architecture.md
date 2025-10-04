@@ -48,9 +48,10 @@ Planning references:
 ## Build & CI
 
 -   Command chain: `npm run build` → `tsc -b` (type check only) → `vite build` (bundle & optimize).
--   CI pipeline order: lint → typecheck → test (Vitest, coverage ≥50%) → changelog check → build → artifacts.
+-   CI pipeline order: lint → typecheck → test (Vitest) → coverage (PRs) → changelog check → build → artifacts.
 -   Changelog enforcement: script fails CI if source changes without `CHANGELOG.md` update.
 -   Conventional commits enforced locally via Husky + commitlint.
+-   Coverage provider: @vitest/coverage-v8 with thresholds ≥ 50% (scoped to src/**/*).
 -   Release automation script (`npm run release`) bumps version, migrates `[Unreleased]`, updates diff links, commits (+ optional tag).
 
 ## Extension Points
