@@ -13,9 +13,9 @@ describe('Auth bootstrap (happy path)', () => {
     vi.spyOn(global, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
       const url = input.toString();
       if (url.endsWith('/api/me')) {
-        return new Response(JSON.stringify({ id: 'u1', email: 'user@example.com' }), { status: 200, headers: { 'Content-Type': 'application/json' } }) as unknown as Response;
+        return new Response(JSON.stringify({ id: 'u1', email: 'user@example.com' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
-      return new Response('not found', { status: 404 }) as unknown as Response;
+      return new Response('not found', { status: 404 });
     });
   });
 
