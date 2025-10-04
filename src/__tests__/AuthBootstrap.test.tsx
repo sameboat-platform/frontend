@@ -27,7 +27,7 @@ describe('Auth bootstrap (happy path)', () => {
   it('renders ME page after bootstrap without redirect', async () => {
     render(
       <AuthProvider>
-        <MemoryRouter initialEntries={[{ pathname: '/me' }]}>        
+        <MemoryRouter initialEntries={[{ pathname: '/me' }]}>
           <Routes>
             <Route path="/me" element={<Me />} />
           </Routes>
