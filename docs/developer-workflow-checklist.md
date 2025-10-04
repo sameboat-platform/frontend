@@ -42,6 +42,7 @@ End-to-end repeatable steps for making, validating, and shipping a change. Use t
 -   [ ] Type check: `npm run typecheck` (or `npm run build` for full chain).
 -   [ ] Lint: `npm run lint` (fix issues or refactor).
 -   [ ] Tests: `npm test` (ensure green; add missing cases for new logic paths).
+-   [ ] Coverage: `npm run test:coverage` (thresholds: lines/functions/statements/branches ≥ 50%).
 -   [ ] Changelog enforcement: `npm run changelog:check` (ensures entry is present if source changed).
 
 ## 6. Commit & Push
@@ -57,7 +58,7 @@ End-to-end repeatable steps for making, validating, and shipping a change. Use t
 
 ## 8. CI Validation
 
--   [ ] Confirm CI passes: lint, typecheck, tests, changelog check, build.
+-   [ ] Confirm CI passes: lint, typecheck, tests, coverage on PR, changelog check, build.
 -   [ ] Address failures immediately (amend fix commits rather than stacking noise if early in review).
 
 ## 9. Review Iteration
@@ -130,6 +131,12 @@ Trigger this AFTER the PR containing the final set of changes for the release ha
 | Intermittent test failure        | Flaky timing waits       | Replace `setTimeout` with deterministic mock / use `waitFor` correctly |
 | Unused imports / types           | Lint errors              | Remove or use                                                          |
 | Accidental double bootstrap logs | Extra refresh calls      | Confirm module-level guard intact in auth context                      |
+
+---
+
+## TODO (Next Improvements)
+
+- Write coverage percentage to the GitHub Actions job summary on PRs so reviewers see it without downloading artifacts.
 
 ---
 

@@ -32,7 +32,7 @@ Pre-1.0 releases use `0.x.y`; breaking changes may occur between minor bumps. Ea
 | Language         | TypeScript ^5.8.0 (strict)         | `noUncheckedSideEffectImports`, `verbatimModuleSyntax` enforced |
 | Linting          | ESLint flat config + plugins       | React Hooks, Refresh, a11y, import sorting                      |
 | Conventional commits | commitlint + Husky hooks       | Enforces `type(scope?): subject` style                          |
-| CI               | GitHub Actions                     | Lint, type, tests (coverage ≥50%), changelog check, build       |
+| CI               | GitHub Actions                     | Lint, type, tests; coverage (PRs, ≥50%); changelog check; build |
 | Release utility  | Custom script `npm run release`    | Bumps version + moves `[Unreleased]` in CHANGELOG               |
 
 ## Project Structure
@@ -173,11 +173,12 @@ Remove or disable this panel for production builds (guarded by `import.meta.env.
 ### Running Tests & Coverage
 
 ```bash
-npm run test          # Single run with coverage thresholds (50%)
+npm run test          # Single run
+npm run test:coverage # Run with v8 provider; thresholds (50%) enforced locally
 npx vitest watch      # Interactive watch (coverage summary on exit)
 ```
 
-Coverage thresholds (initial baseline): lines/functions/statements/branches ≥ 50%. CI fails below.
+Coverage thresholds (initial baseline): lines/functions/statements/branches ≥ 50%. PRs run coverage; CI fails below.
 
 ### Test Locations
 
@@ -226,7 +227,7 @@ vi.spyOn(global, "fetch").mockResolvedValueOnce(
 
 -   TypeScript clean (build runs `tsc -b`).
 -   ESLint passes (`npm run lint`).
--   Tests pass with coverage ≥ thresholds.
+-   Tests pass; coverage ≥ thresholds.
 -   Changelog updated when source/docs change (`npm run changelog:check`).
 -   Conventional commit style enforced (Husky + commitlint).
 -   CI replicates local gates: lint → type → tests → changelog check → build.
@@ -258,7 +259,8 @@ npm run build
 -   dev – start Vite dev server
 -   build – production build
 -   preview – preview production build locally
--   test – run Vitest suite (with coverage thresholds)
+-   test – run Vitest suite
+-   test:coverage – run Vitest with @vitest/coverage-v8 (thresholds enforced)
 -   release – run automated version + changelog update script
 -   changelog:check – enforce changelog entry presence
 -   lint / lint:fix – run (and optionally fix) ESLint
@@ -275,3 +277,7 @@ git fetch origin --prune
 ```
 
 CI badge & links have been updated to the new organization path.
+
+## Notes
+
+- Local coverage artifacts (coverage/) are ignored by git; the CI workflow uploads coverage as PR artifacts and updates the badge on main after merge.
