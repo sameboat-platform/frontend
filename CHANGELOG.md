@@ -9,33 +9,43 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Added
 - SECURITY policy (`SECURITY.md`).
 - MIT license file (`LICENSE`).
-- Coverage badge workflow (`coverage-badge.yml`) generating `coverage.svg` on main pushes.
+- Coverage badge workflow (`coverage-badge.yml`) that:
+	- runs tests with coverage on pull requests targeting `main` (no pushes),
+	- generates and commits a badge to `.github/badges/coverage.svg` only on pushes to `main`,
+	- uploads coverage artifacts on PRs for review.
 - `.env.example` template enumerating supported environment variables.
 - Dependabot configuration skeleton (`.github/dependabot.yml`) grouping security vs tooling updates.
 - Smoke test for `HealthCheckCard` component.
+ - Pause-on-error health polling with Resume CTA, plus tests covering pause/resume behavior.
 
 ### Changed
 - Replaced ad-hoc inline Home page health logic with reusable `<HealthCheckCard />` component.
 - Removed transient auth bootstrap "heartbeat" interval (was only for earlier debugging) to reduce console noise.
 - Stabilized health polling implementation (single interval; eliminated status-driven re-subscribe loop).
+ - README coverage badge now references the generated SVG in-repo and links to the workflow.
+ - Vitest coverage provider switched to `@vitest/coverage-v8` and scoped to `src/**` files.
 
 ### Fixed
 - Excessive `/actuator/health` polling spam caused by effect dependency loop and duplicate Home page implementation.
+- HealthCheckCard now restarts auto-polling after clicking Resume (previously stayed paused with no interval until manual refresh).
+- HealthCheckCard tests stabilized (no giant timers; deterministic pause/resume flow).
 
 ### Documentation
 - Added minimal security policy document.
-- README badges (release, coverage, security, license). 
+- README badges (release, coverage, security, license); added performance budget notes and live app links.
+- Developer docs updated to reflect coverage thresholds and PR coverage workflow.
 
 ### Security
 - Bump esbuild to 0.25.10 resolving moderate advisory.
-- Upgrade vitest to 3.2.4 (dev dependency; no runtime impact).
+- Upgrade Vitest to 3.2.4 and enable v8 coverage provider.
 
 ### Internal
 - Removed legacy .eslintignore by migrating ignore patterns to flat config.
 - Silenced auth debug logs during Vitest via `isVitest` guard.
-- Automated coverage badge generation.
+- Automated coverage badge generation with branch-protection-safe push step.
 - Refactored health polling to use stable callback + ref tracking (`statusRef`) preventing rapid interval churn.
 - Consolidated health checks (Home now delegates to `HealthCheckCard`).
+ - Ignore local `coverage/` directory in git; upload artifacts in CI instead.
 
 ### Notes
 - Nothing yet.
