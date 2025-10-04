@@ -2,7 +2,7 @@
 [![Release](https://img.shields.io/github/v/tag/sameboat-platform/frontend?label=release&sort=semver)](https://github.com/sameboat-platform/frontend/releases)
 [![License](https://img.shields.io/github/license/sameboat-platform/frontend.svg)](LICENSE)
 [![Dependencies](https://img.shields.io/github/actions/workflow/status/sameboat-platform/frontend/frontend-ci.yml?label=build)](https://github.com/sameboat-platform/frontend/actions)
-[![Coverage](https://img.shields.io/badge/coverage-≥50%25-informational)](./CHANGELOG.md)
+[![Coverage](./.github/badges/coverage.svg)](https://github.com/sameboat-platform/frontend/actions/workflows/coverage-badge.yml)
 [![Security Policy](https://img.shields.io/badge/security-policy-blue)](./SECURITY.md)
 
 # SameBoat Frontend (Vite + React + TS)

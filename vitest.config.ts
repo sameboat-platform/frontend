@@ -7,7 +7,14 @@ export default defineConfig({
         globals: true,
         css: true,
         coverage: {
-            reporter: ["text", "lcov"],
+            provider: 'v8',
+            reporter: ["text", 'json-summary', "lcov"],
+            reportsDirectory: './coverage',
+            include: ['src/**/*.{ts,tsx}'],
+            exclude: [
+                // Generated or non-executable app glue we don't need to count
+                'src/vite-env.d.ts',
+            ],
             thresholds: {
                 lines: process.env.COVERAGE_LINES ? parseInt(process.env.COVERAGE_LINES, 10) : 50,
                 functions: process.env.COVERAGE_FUNCTIONS ? parseInt(process.env.COVERAGE_FUNCTIONS, 10) : 50,
