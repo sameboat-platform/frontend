@@ -59,7 +59,7 @@ jobs:
           git config user.email 'actions@github.com'
           git add .github/badges/coverage.svg
           git commit -m "chore: update coverage badge" || echo "No changes"
-          git push
+          git push || echo "Note: push to main was blocked (likely branch protection). Badge will update after a maintainer merges a PR."
 
       - name: Upload coverage artifact (PRs only)
         if: ${{ github.event_name == 'pull_request' }}
