@@ -9,6 +9,7 @@ interface HealthCheckCardProps {
   intervalMs?: number;         // auto refresh interval
   minSkeletonMs?: number;      // minimum time skeleton remains
   onStatusChange?: (status: string) => void; // optional callback
+  failureThreshold?: number;   // consecutive failures before auto-pausing
 }
 
 type HealthState = 'idle' | 'checking' | 'ok' | 'error';
@@ -18,6 +19,7 @@ export function HealthCheckCard({
   intervalMs,
   minSkeletonMs = 450,
   onStatusChange,
+  failureThreshold = 3,
 }: HealthCheckCardProps) {
   const envInterval = (() => {
     if (intervalMs) return intervalMs;
@@ -32,8 +34,12 @@ export function HealthCheckCard({
   const [message, setMessage] = useState('');
   const [lastChecked, setLastChecked] = useState<number | undefined>();
   const checkStartRef = useRef<number | null>(null);
+  const [consecutiveFailures, setConsecutiveFailures] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const intervalIdRef = useRef<number | null>(null);
 
   const runHealthCheck = useCallback(async () => {
+    if (paused) return; // prevent background checks while paused
     setStatus(prev => (prev === 'idle' ? prev : 'checking'));
     checkStartRef.current = Date.now();
     try {
@@ -44,27 +50,50 @@ export function HealthCheckCard({
       } else {
         setMessage('Backend responded ✔');
       }
+      setConsecutiveFailures(0);
     } catch (e) {
       const err = e instanceof Error ? e : undefined;
       setStatus('error');
       setMessage(err?.message ?? 'Failed to reach backend');
+      setConsecutiveFailures(prev => {
+        const next = prev + 1;
+        if (next >= failureThreshold) {
+          setPaused(true);
+        }
+        return next;
+      });
     } finally {
       const end = Date.now();
       const elapsed = checkStartRef.current ? end - checkStartRef.current : 0;
       const delay = statusRef.current === 'checking' && elapsed < minSkeletonMs ? minSkeletonMs - elapsed : 0;
       setTimeout(() => setLastChecked(Date.now()), delay);
     }
-  }, [path, minSkeletonMs]);
+  }, [path, minSkeletonMs, paused, failureThreshold]);
 
   useEffect(() => { onStatusChange?.(status); }, [status, onStatusChange]);
 
   useEffect(() => {
-    // Run once on mount then on the interval; stable because runHealthCheck deps exclude status
+    // Run once on mount then on the interval; pause disables interval
     let cancelled = false;
     (async () => { if (!cancelled) await runHealthCheck(); })();
-    const id = setInterval(() => { if (!cancelled) runHealthCheck(); }, envInterval);
-    return () => { cancelled = true; clearInterval(id); };
-  }, [envInterval, runHealthCheck]);
+    if (!paused) {
+      const id = window.setInterval(() => { if (!cancelled) runHealthCheck(); }, envInterval);
+      intervalIdRef.current = id;
+    }
+    return () => {
+      cancelled = true;
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+        intervalIdRef.current = null;
+      }
+    };
+  }, [envInterval, runHealthCheck, paused]);
+
+  const handleResume = useCallback(async () => {
+    setPaused(false);
+    setConsecutiveFailures(0);
+    await runHealthCheck();
+  }, [runHealthCheck]);
 
   return (
   <Card data-testid='health-card'>
@@ -99,16 +128,25 @@ export function HealthCheckCard({
                 <Code fontSize='xs'>{message}</Code>
               </HStack>
             )}
-            {status === 'error' && (
+            {status === 'error' && !paused && (
               <Alert status='error' variant='subtle'>
                 <AlertIcon /> <span>Error — <Code fontSize='xs'>{message}</Code></span>
+              </Alert>
+            )}
+            {paused && (
+              <Alert status='warning' variant='subtle' data-testid='health-paused'>
+                <AlertIcon />
+                <Flex align='center' gap={2} wrap='wrap'>
+                  <Text>Paused after {consecutiveFailures} consecutive failures.</Text>
+                  <Button size='xs' onClick={handleResume} data-testid='resume-btn'>Resume</Button>
+                </Flex>
               </Alert>
             )}
           </motion.div>
         </AnimatePresence>
         <HStack justify='space-between' pt={3} fontSize='xs' opacity={0.75} flexWrap='wrap'>
           <Text>{lastChecked ? `Last check: ${new Date(lastChecked).toLocaleTimeString()}` : 'Awaiting first result…'}</Text>
-          <Button size='xs' variant='outline' onClick={runHealthCheck} isDisabled={status==='idle'}>Refresh now</Button>
+          <Button size='xs' variant='outline' onClick={runHealthCheck} isDisabled={status==='idle' || paused}>Refresh now</Button>
         </HStack>
         <Text mt={2} fontSize='xs' opacity={0.6}>
           If this fails in dev, ensure the backend is running and CORS allows <Code fontSize='xs'>http://localhost:5173</Code>. If you use Actuator defaults, switch the fetch path to <Code fontSize='xs'>/actuator/health</Code>.
