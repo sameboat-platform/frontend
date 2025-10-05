@@ -6,6 +6,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-05
 ### Added
 - SECURITY policy (`SECURITY.md`).
 - MIT license file (`LICENSE`).
