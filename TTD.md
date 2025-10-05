@@ -44,6 +44,27 @@
 Add new sections here as areas expand (e.g., Testing, Performance, Accessibility).
 
 
+## Post-0.2.0 Release – First Things To Do
+
+1) Triage remaining 0.2.0 issues
+  - Move non-blockers to 0.2.1 (patch) or 0.3.0 (next minor), or clear milestone for truly "anytime" tasks.
+  - Close the 0.2.0 milestone after moving leftovers; keep Project board statuses accurate.
+
+2) CI nicety: add coverage percentage to PR job summary (if not already)
+  - In coverage-badge workflow, after parsing coverage, append to $GITHUB_STEP_SUMMARY for easy reviewer visibility.
+
+3) Branch protection
+  - Make the Coverage Badge workflow a required check on main so PRs enforce coverage consistently.
+
+4) CHANGELOG hygiene
+  - Ensure 0.2.0 section lists only shipped changes; deferred items remain in issues/projects.
+
+5) Follow-ups (small PRs)
+  - Dependency audit step (fail on high/critical).
+  - Minimal observability event bus + console sink.
+  - Docs: environment variables + runtime guard.
+
+
 ### Potential workflow--for badge coverage updating:
 
 name: Update Badge

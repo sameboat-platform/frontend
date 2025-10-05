@@ -101,6 +101,24 @@ Trigger this AFTER the PR containing the final set of changes for the release ha
 -   [ ] Verify updated links at bottom of `CHANGELOG.md` render as expected.
 -   [ ] Create GitHub Release (optional) referencing CHANGELOG section.
 
+### Milestones & Carryover
+
+- Timeboxed releases are OK. Only ship what’s done; carry over the rest.
+- Before tagging, triage the milestone:
+    - Label hard requirements as release-blocker (if used) and ensure they’re done.
+    - Move non-blockers to the next milestone (e.g., 0.2.1 or 0.3.0) or clear the milestone for truly “anytime” tasks.
+    - Update the Project board (Done/In Progress/Backlog) to reflect actual status.
+- After tagging:
+    - Close the milestone.
+    - Ensure leftover issues were moved forward (bulk edit via the Issues list is fine).
+- Changelog lists only shipped changes. Don’t include planned-but-deferred items; they remain in issues/projects.
+
+### Immediately After 0.2.0 Release (Do This First)
+
+- Confirm CHANGELOG 0.2.0 includes only shipped items; remove any bullets that represent deferred work (keep those as issues in 0.2.1/0.3.0).
+- Triage any remaining 0.2.0-labeled issues: move to 0.2.1 (patch) or 0.3.0 (next minor), or clear milestone if appropriate; then close the 0.2.0 milestone.
+- Optional niceties to queue next: add coverage percentage to PR job summary; mark coverage workflow as a required status check on main.
+
 ## 13. Production / Deployment (Future Hook)
 
 -   [ ] Trigger environment deploy or pipeline once build artifact is green.
