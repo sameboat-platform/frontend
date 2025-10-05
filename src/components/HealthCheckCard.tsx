@@ -70,7 +70,7 @@ export function HealthCheckCard({
       const delay = statusRef.current === 'checking' && elapsed < minSkeletonMs ? minSkeletonMs - elapsed : 0;
       setTimeout(() => setLastChecked(Date.now()), delay);
     }
-  }, [path, minSkeletonMs, paused, failureThreshold]);
+  }, [path, minSkeletonMs, failureThreshold]);
 
   useEffect(() => { onStatusChange?.(status); }, [status, onStatusChange]);
 
