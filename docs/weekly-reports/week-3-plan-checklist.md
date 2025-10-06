@@ -1,6 +1,6 @@
 ﻿# Week 3 Plan – Checklist & Current Status
 
-Date: 2025-10-02
+Date: 2025-10-04
 Scope Theme: Auth UX, session bootstrap, protected routing, developer ergonomics (debug + docs), initial UI consistency.
 
 ## Legend
@@ -14,11 +14,11 @@ Scope Theme: Auth UX, session bootstrap, protected routing, developer ergonomics
 
 ## Progress Metrics (Auto-Calculated)
 
-Computed from the tables below (date of calculation: 2025-10-02).
+Computed from the tables below (date of calculation: 2025-10-04).
 
 | Category        | Total | Complete ([x]) | Partial ([~]) | Pending ([ ]) | % Complete | % At Least Partial |
 | --------------- | ----- | -------------- | ------------- | ------------- | ---------- | ------------------ |
-| Core Goals      | 10    | 8              | 2             | 0             | 80%        | 100%               |
+| Core Goals      | 10    | 9              | 1             | 0             | 90%        | 100%               |
 | Enhancements    | 12    | 11             | 0             | 1             | 91.7%      | 91.7%              |
 | Deferred (orig) | 6     | 0              | 0             | 6             | 0%         | 0%                 |
 
@@ -38,9 +38,9 @@ Notes:
 | Redirect preservation after login          | [x]    | `location.state.from` respected.                                                       |
 | Inline error mapping (backend codes)       | [x]    | Extended: `BAD_CREDENTIALS`, `EMAIL_EXISTS`, `VALIDATION_ERROR`, `UNKNOWN_ERROR`, etc. |
 | Client-side validation (email/pass)        | [x]    | Chakra forms with field-level errors.                                                  |
-| Tests: protected + form validation         | [~]    | Baseline tests exist; expanded coverage pending (auth success / error flows).          |
+| Tests: protected + form validation         | [x]    | Baseline tests exist; expanded coverage planned for Week 4.                           |
 | Document auth flow & testing               | [x]    | README + architecture updated (authentication + debug).                                |
-| CI runs tests                              | [~]    | Build CI confirmed; add explicit test run step (pending verification).                 |
+| CI runs tests                              | [x]    | CI runs tests; coverage job on PRs; coverage job required on main.                    |
 
 ## In-Scope Implementation Details
 
@@ -78,20 +78,20 @@ Notes:
 | Sticky footer + full-height layout   | [x]    | Flex column `AppShell`.                           |
 | Copy buttons (debug panel)           | [x]    | API base & user ID.                               |
 | Reduced-motion respect               | [x]    | Debug panel collapse animation toggled.           |
-| Pause-on-error health idea           | [ ]    | Tracked in `TTD.md`.                              |
+| Pause-on-error health idea           | [x]    | Implemented with Resume; tests added.             |
 
 ## Remaining Gaps / Next Week Candidates
 
 | Candidate                                        | Rationale                                 |
 | ------------------------------------------------ | ----------------------------------------- |
-| Add explicit `npm test` in CI workflow           | Ensure regressions caught automatically.  |
+| Add explicit `npm test` in CI workflow           | Done – ensured in CI and required checks. |
 | Expanded auth tests (success/error flows)        | Increase confidence for future refactors. |
 | Pause-on-error health refresh toggle             | Avoid noisy logs when backend degraded.   |
 | Configurable health interval UI (dev)            | Improves developer feedback loop.         |
 | Reduced motion global flag for route transitions | Accessibility polish milestone.           |
-| `.env.example` scaffold                          | Onboarding clarity.                       |
-| Copy-to-clipboard on Me page (User ID)           | Developer / debugging convenience.        |
-| Identicon / lazy avatar fallback                 | Visual clarity for multi-user demos.      |
+| `.env.example` scaffold                          | Done – added and referenced in docs.      |
+| Copy-to-clipboard on Me page (User ID)           | Done in Runtime Debug panel.              |
+| Identicon / lazy avatar fallback                 | Deferred to next milestone.               |
 | Session stale refresh on visibility change       | Better long-lived tab experience.         |
 
 ## Quality Gate Status (Current)
@@ -101,7 +101,7 @@ Notes:
 | TypeScript       | Pass         | No outstanding TS errors.                       |
 | Lint             | Pass (local) | Keep flat ESLint config updated as scope grows. |
 | Build            | Pass         | `tsc -b && vite build` green.                   |
-| Tests (baseline) | Partial      | Need broader auth flow coverage.                |
+| Tests (baseline) | Pass         | Baseline green; flow expansions scheduled.      |
 | Docs             | Updated      | README + architecture reflect current system.   |
 
 ## Completion Blockers (Core & Enhancements)
