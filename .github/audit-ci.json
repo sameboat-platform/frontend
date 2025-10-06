@@ -1,0 +1,18 @@
+{
+  "report-type": "summary",
+  "allowlist": [
+    {
+      "advisoryId": 0,
+      "package": "",
+      "reason": "Example only. Replace with real advisory and an expiration date.",
+      "expires": "2099-01-01"
+    }
+  ],
+  "levels": {
+    "critical": true,
+    "high": true,
+    "moderate": false,
+    "low": false
+  },
+  "omit-dev": true
+}

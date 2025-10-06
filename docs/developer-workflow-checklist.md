@@ -59,6 +59,7 @@ End-to-end repeatable steps for making, validating, and shipping a change. Use t
 ## 8. CI Validation
 
 -   [ ] Confirm CI passes: lint, typecheck, tests, coverage on PR, changelog check, build.
+-   [ ] Dependency audit: review PR/job summary. High/Critical must be resolved or explicitly allowlisted with expiration; Moderate/Low are informational.
 -   [ ] Address failures immediately (amend fix commits rather than stacking noise if early in review).
 
 ## 9. Review Iteration
@@ -87,6 +88,7 @@ Trigger this AFTER the PR containing the final set of changes for the release ha
 [Unreleased] not empty (script aborts otherwise).
 - Version bump matches intent (patch vs minor).
 - After release script: review diff of CHANGELOG.md quickly.
+ - You must be on `main` to run the release script (guard enforced).
 
 ### When ready
 
@@ -111,13 +113,8 @@ Trigger this AFTER the PR containing the final set of changes for the release ha
 - After tagging:
     - Close the milestone.
     - Ensure leftover issues were moved forward (bulk edit via the Issues list is fine).
+    - Verify dependency audit remains green on main; track any Moderate/Low as issues if needed.
 - Changelog lists only shipped changes. Don’t include planned-but-deferred items; they remain in issues/projects.
-
-### Immediately After 0.2.0 Release (Do This First)
-
-- Confirm CHANGELOG 0.2.0 includes only shipped items; remove any bullets that represent deferred work (keep those as issues in 0.2.1/0.3.0).
-- Triage any remaining 0.2.0-labeled issues: move to 0.2.1 (patch) or 0.3.0 (next minor), or clear milestone if appropriate; then close the 0.2.0 milestone.
-- Optional niceties to queue next: add coverage percentage to PR job summary; mark coverage workflow as a required status check on main.
 
 ## 13. Production / Deployment (Future Hook)
 

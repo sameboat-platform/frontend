@@ -87,8 +87,8 @@ jobs:
                       coverage/**/*
                   if-no-files-found: ignore
                   retention-days: 7
-        #         name: web-dist
-        #         path: dist
+        #     - name: web-dist
+        #       path: dist
         #
         #     - name: Install Netlify CLI
         #       run: npm i -g netlify-cli

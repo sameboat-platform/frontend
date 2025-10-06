@@ -49,10 +49,11 @@ Planning references:
 
 -   Command chain: `npm run build` → `tsc -b` (type check only) → `vite build` (bundle & optimize).
 -   CI pipeline order: lint → typecheck → test (Vitest) → coverage (PRs) → changelog check → build → artifacts.
+-   Dependency audit workflow: runs `npm audit --omit=dev` and fails on High/Critical; summarizes severity counts in PRs. Moderate/Low are reported but non-blocking.
 -   Changelog enforcement: script fails CI if source changes without `CHANGELOG.md` update.
 -   Conventional commits enforced locally via Husky + commitlint.
 -   Coverage provider: @vitest/coverage-v8 with thresholds ≥ 50% (scoped to src/**/*).
--   Release automation script (`npm run release`) bumps version, migrates `[Unreleased]`, updates diff links, commits (+ optional tag).
+-   Release automation script (`npm run release`) bumps version, migrates `[Unreleased]`, updates diff links, commits (+ optional tag). Safety guard prevents running off `main`.
 
 ## Extension Points
 
@@ -63,7 +64,7 @@ Planning references:
 | Telemetry        | Runtime debug panel (dev only)           | Expand to include latency, feature flags       |
 | Forms            | Chakra primitives                        | Extract form schema validation layer (Zod)     |
 | Health checks    | Interval polling                         | Pause-on-error, exponential backoff, SSE or WS |
-| Tooling pipeline | Lint + tests + release script            | Add test-change guards, auto PR labeling       |
+| Tooling pipeline | Lint + tests + release script            | Add test-change guards, auto PR labeling; dependency audit allowlist policy |
 
 ## Non-Goals (Current Phase)
 
