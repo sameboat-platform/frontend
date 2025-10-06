@@ -1,4 +1,3 @@
-
 export type AppEventType =
   | 'auth:login'
   | 'auth:logout'
