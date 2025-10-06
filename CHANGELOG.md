@@ -6,7 +6,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
-## [0.2.0] - 2025-10-05
+### Added
+- CI: Dependency Audit workflow (`dependency-audit.yml`) runs `npm audit` on runtime dependencies; fails on High/Critical, summarizes results in PR/job summary.
+- Security docs: dependency audit policy and fallbacks (`docs/security/dependency-audit.md`).
+
+### Changed
+- Release script hardening: refuse to run unless on `main` (require‑main guard) to prevent accidental releases from feature branches.
+
+### Documentation
+- PR template now includes a "Post‑merge actions" checklist (required checks, tag push, milestone closure).
+- README and Architecture updated to describe dependency audit policy and release guard.
+
+## [0.2.0] - 2025-10-04
 ### Added
 - SECURITY policy (`SECURITY.md`).
 - MIT license file (`LICENSE`).
@@ -110,5 +121,6 @@ Guidelines:
 -   Start new entries under [Unreleased]; move them into a dated version section when cutting a release (and optionally tagging in git).
 -   Group changes under: Added / Changed / Fixed / Removed / Deprecated / Security / Docs / Internal as needed.
 
-[Unreleased]: https://github.com/sameboat-platform/frontend/compare/0.1.0...HEAD
-[0.1.0]: https://github.com/sameboat-platform/frontend/tree/0.1.0
+[Unreleased]: https://github.com/sameboat-platform/frontend/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/sameboat-platform/frontend/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/sameboat-platform/frontend/tree/v0.1.0
