@@ -54,6 +54,7 @@ Planning references:
 -   Conventional commits enforced locally via Husky + commitlint.
 -   Coverage provider: @vitest/coverage-v8 with thresholds ≥ 50% (scoped to src/**/*).
 -   Release automation script (`npm run release`) bumps version, migrates `[Unreleased]`, updates diff links, commits (+ optional tag). Safety guard prevents running off `main`.
+-   Bundle analysis: `npm run analyze` generates `dist/bundle-stats.html` for visualizing module sizes and spotting split points.
 
 ## Extension Points
 

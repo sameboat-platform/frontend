@@ -45,6 +45,15 @@
 -   Script/guard to fail if a `feat:` commit lands without any matching diff in `src/__tests__/` (heuristic; allow override via `[skip-test-guard]`).
 -   GitHub Action to auto-assign PR label based on first conventional commit type (feat/fix/docs/chore/refactor/test/perf).
 
+## Performance
+
+-   Route-level code-splitting: convert top-level routes to `React.lazy` + `Suspense` to reduce initial JS.
+-   Vendor chunking: configure `build.rollupOptions.output.manualChunks` to isolate large libs (e.g., framer-motion, chakra-ui) into async chunks used where needed.
+-   Audit heavy deps in analyzer report and evaluate lighter alternatives or partial imports.
+-   Prefer tree-shakable entrypoints (e.g., import only used icons/components; avoid deep wildcard imports).
+-   Consider dynamic imports for rarely used panels (e.g., `RuntimeDebugPanel`) in dev-only builds.
+-   Track regression threshold against soft budget (initial JS ≤ 250 kB gzip) in PR descriptions until we automate a check.
+
 ### Project Automation
 
 -   Auto-update the Project “Status” field when a linked PR is merged (project workflows; ensure issues close via closing keywords).

@@ -94,6 +94,15 @@ Add components under `src/components/` and import into pages or `App.tsx`.
 4. Preview production bundle: `npm run preview`
 5. Bundle analyze (optional): `npm run analyze` (generates a visual report of bundle composition)
 6. Lint before commit: `npm run lint`
+7. Bundle analysis: `npm run analyze` generates `dist/bundle-stats.html` and opens it.
+
+### Performance Budget (soft)
+
+- Initial app JS (gzip) target: ≤ 250 kB (soft gate; no CI block yet).
+- Use the bundle analyzer to spot large libs and consider:
+    - code-splitting via dynamic `import()`
+    - lighter alternatives to heavy packages
+    - tree-shaking-friendly import paths
 7. (Optional) Auto hooks: Husky runs lint/tests/commitlint pre-push / commit.
 
 ## Environment Variables
@@ -270,6 +279,7 @@ npm run build
 -   preview – preview production build locally
 -   test – run Vitest suite
 -   test:coverage – run Vitest with @vitest/coverage-v8 (thresholds enforced)
+-   analyze – build in analyze mode and generate `dist/bundle-stats.html` (auto-opens)
 -   release – run automated version + changelog update script
 -   changelog:check – enforce changelog entry presence
 -   lint / lint:fix – run (and optionally fix) ESLint

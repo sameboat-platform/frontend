@@ -9,6 +9,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Added
 - CI: Dependency Audit workflow (`dependency-audit.yml`) runs `npm audit` on runtime dependencies; fails on High/Critical, summarizes results in PR/job summary.
 - Security docs: dependency audit policy and fallbacks (`docs/security/dependency-audit.md`).
+- Bundle analysis script (`npm run analyze`) that builds in analyze mode, generates a bundle report, saves it to `dist/bundle-stats.html`, and auto-opens it.
 
 ### Changed
 - Release script hardening: refuse to run unless on `main` (require‑main guard) to prevent accidental releases from feature branches.
@@ -16,6 +17,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Documentation
 - PR template now includes a "Post‑merge actions" checklist (required checks, tag push, milestone closure).
 - README and Architecture updated to describe dependency audit policy and release guard.
+- README documents a soft performance budget (initial JS ≤ 250 kB gzip) and bundle analysis workflow.
 
 ## [0.2.0] - 2025-10-04
 ### Added

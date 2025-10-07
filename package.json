@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc -b && vite build",
-        "analyze": "vite build --mode analyze && npx vite-bundle-visualizer",
+    "analyze": "node scripts/analyze.mjs",
         "lint": "eslint --ext .ts,.tsx src",
         "lint:fix": "eslint --ext .ts,.tsx src --fix",
         "preview": "vite preview",
