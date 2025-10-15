@@ -21,7 +21,7 @@ export function onEvent(h: Handler) {
 export function emit(type: AppEventType, payload?: unknown) {
   const evt: AppEvent = { type, payload, ts: Date.now() };
   for (const l of listeners) l(evt);
-  if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_EVENTS) {
+  if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_EVENTS === 'true') {
     console.debug('[event]', evt);
   }
 }
