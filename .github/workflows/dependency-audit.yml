@@ -32,32 +32,56 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      # Run audit-ci if allowlist config is present, otherwise run npm audit.
+      - name: audit-ci (allowlist support)
+        if: hashFiles('.github/audit-ci.json') != ''
+        run: npx --yes audit-ci --config .github/audit-ci.json --critical --high --omit-dev
+
       - name: npm audit (runtime deps only)
+        if: hashFiles('.github/audit-ci.json') == ''
         run: npm audit --omit=dev --audit-level=high
 
       - name: Summarize audit in PR/job summary
         if: always()
         run: |
-          node -e "const {execSync}=require('child_process');
-          let j={};
-          try{ j=JSON.parse(execSync('npm audit --omit=dev --json',{stdio:['ignore','pipe','ignore']}).toString()); }catch(e){}
-          const v=j.vulnerabilities||{};
-          const get=(k)=> (typeof v[k]==='number'?v[k]:(v[k]?.count||0));
-          const out = [
-            '### Dependency audit',
-            `- Critical: ${get('critical')}`,
-            `- High: ${get('high')}`,
-            `- Moderate: ${get('moderate')}`,
-            `- Low: ${get('low')}`,
-            '',
-            'Policy: fail on High/Critical only. Moderate/Low are reported but do not block.',
-            'Fallbacks: use npm overrides for patched transitives, patch-package as last resort, or temporary allowlist with expiration (see docs/security/dependency-audit.md).'
-          ].join('\n');
-          require('fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY,out);"
-
-      # Optional: allowlist via audit-ci when a config is provided in the repo.
-      # To enable, add a .github/audit-ci.json file (see docs/security/dependency-audit.md) and remove 'continue-on-error'.
-      - name: audit-ci (optional allowlist support)
-        if: hashFiles('.github/audit-ci.json') != ''
-        continue-on-error: true
-        run: npx --yes audit-ci --config .github/audit-ci.json --critical --high --omit-dev
+          node -e "
+          const {execSync} = require('child_process');
+          const fs = require('fs');
+          let out = '';
+          if (require('fs').existsSync('.github/audit-ci.json')) {
+            // Summarize audit-ci output
+            try {
+              const result = execSync('npx --yes audit-ci --config .github/audit-ci.json --critical --high --omit-dev --json',{stdio:['ignore','pipe','ignore']}).toString();
+              const j = JSON.parse(result);
+              out = [
+                '### Dependency audit (audit-ci)',
+                `- Critical: ${j.summary.critical || 0}`,
+                `- High: ${j.summary.high || 0}`,
+                `- Moderate: ${j.summary.moderate || 0}`,
+                `- Low: ${j.summary.low || 0}`,
+                '',
+                'Policy: fail on High/Critical only. Moderate/Low are reported but do not block.',
+                'Fallbacks: use npm overrides for patched transitives, patch-package as last resort, or temporary allowlist with expiration (see docs/security/dependency-audit.md).'
+              ].join('\n');
+            } catch(e) {
+              out = '### Dependency audit (audit-ci)\nFailed to parse audit-ci output.';
+            }
+          } else {
+            // Summarize npm audit output
+            let j={};
+            try{ j=JSON.parse(execSync('npm audit --omit=dev --json',{stdio:['ignore','pipe','ignore']}).toString()); }catch(e){}
+            const v=j.vulnerabilities||{};
+            const get=(k)=> (typeof v[k]==='number'?v[k]:(v[k]?.count||0));
+            out = [
+              '### Dependency audit',
+              `- Critical: ${get('critical')}`,
+              `- High: ${get('high')}`,
+              `- Moderate: ${get('moderate')}`,
+              `- Low: ${get('low')}`,
+              '',
+              'Policy: fail on High/Critical only. Moderate/Low are reported but do not block.',
+              'Fallbacks: use npm overrides for patched transitives, patch-package as last resort, or temporary allowlist with expiration (see docs/security/dependency-audit.md).'
+            ].join('\n');
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);
+          "
