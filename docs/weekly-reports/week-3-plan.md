@@ -44,16 +44,16 @@ Primary Theme: End‑to‑end user authentication experience (login, register, s
 
 ## 5. Deliverables
 
-| Deliverable           | Description                                              | Status                         |
-| --------------------- | -------------------------------------------------------- | ------------------------------ |
-| Auth Routes           | `/login`, `/register`, `/me` + ProtectedRoute            | In Progress / Partial Complete |
-| Auth Store            | Context store w/ bootstrap & actions                     | In Progress / Partial Complete |
-| Error Mapping         | `state/auth/errors.ts` mapping codes -> friendly strings | Done                           |
-| Forms                 | Validated login & register with inline `<Alert>`         | In Progress / Partial Complete |
-| Redirect Preservation | `location.state.from` redirection post-login             | In Progress / Partial Complete |
-| Tests (Core)          | Protected route redirect + client validation             | In Progress / Partial Complete |
-| README Updates        | Auth architecture + testing workflow                     | In Progress / Partial Complete |
-| Week 3 Plan Doc       | This file                                                | Done                           |
+| Deliverable           | Description                                              | Status     |
+| --------------------- | -------------------------------------------------------- | ---------- |
+| Auth Routes           | `/login`, `/register`, `/me` + ProtectedRoute            | Done       |
+| Auth Store            | Context store w/ bootstrap & actions                     | Done       |
+| Error Mapping         | `state/auth/errors.ts` mapping codes -> friendly strings | Done       |
+| Forms                 | Validated login & register with inline `<Alert>`         | Done       |
+| Redirect Preservation | `location.state.from` redirection post-login             | Done       |
+| Tests (Core)          | Protected route redirect + client validation             | Done       |
+| README Updates        | Auth architecture + testing workflow                     | Done       |
+| Week 3 Plan Doc       | This file                                                | Done       |
 
 (We keep statuses dynamic; update mid‑week.)
 
@@ -65,7 +65,7 @@ Primary Theme: End‑to‑end user authentication experience (login, register, s
 4. Destination preservation & no flash redirect (DONE).
 5. Test suite: add protected route + validation tests (DONE baseline) & optional fetch mocks.
 6. README / docs finalization (Auth UI + Testing) (DONE baseline; refine end of week).
-7. CI adjustment (ensure tests run & are required) (Verify mid‑week).
+7. CI adjustment (ensure tests run & are required) (DONE – tests run in CI; coverage check added on PRs; coverage job required on main).
 8. Buffer / hardening: abort controllers, empty body handling (DONE), edge case cleanup.
 
 ## 7. Technical Decisions (Codified)
@@ -128,7 +128,7 @@ Stretch (optional end-of-week): fetch-mocked success + failure flows for login /
 -   [ ] Add logout button (optional this week)
 -   [ ] Add user info display on `/me`
 -   [ ] Add fetch-mocked login success test
--   [ ] Verify CI runs tests by default
+-   [x] Verify CI runs tests by default
 
 ---
 

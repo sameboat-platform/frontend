@@ -17,6 +17,7 @@ import cp from "node:child_process";
 
 const pkgPath = "package.json";
 const changelogPath = "CHANGELOG.md";
+const TAG_PREFIX = "v"; // standardize on v-prefixed tags (e.g., v0.2.0)
 
 function run(cmd) {
     return cp.execSync(cmd, { stdio: "pipe" }).toString().trim();
@@ -36,6 +37,18 @@ function bumpVersion(current, { major, minor }) {
     if (major) return `${maj + 1}.0.0`;
     if (minor) return `${maj}.${min + 1}.0`;
     return `${maj}.${min}.${pat + 1}`; // patch default
+}
+
+function hasUnreleasedContent() {
+    if (!fs.existsSync(changelogPath)) return false;
+    const original = fs.readFileSync(changelogPath, "utf8");
+    const unreleasedHeader = "## [Unreleased]";
+    if (!original.includes(unreleasedHeader)) return false;
+    const parts = original.split(unreleasedHeader);
+    const after = parts[1] ?? "";
+    const match = after.match(/\n## /); // start of next section
+    const unreleasedBody = match ? after.slice(0, match.index) : after;
+    return unreleasedBody.trim().length > 0;
 }
 
 function updatePackageJson(newVersion) {
@@ -93,12 +106,12 @@ function updateChangelog(newVersion) {
         // Extract previous latest version from the link
         const prevVersionMatch = rebuilt.match(/\n\[(\d+\.\d+\.\d+)\]:/);
         const prevVersion = prevVersionMatch ? prevVersionMatch[1] : null;
-        const newUnreleasedLink = `[Unreleased]: https://github.com/sameboat-platform/frontend/compare/${newVersion}...HEAD`;
+        const newUnreleasedLink = `[Unreleased]: https://github.com/sameboat-platform/frontend/compare/${TAG_PREFIX}${newVersion}...HEAD`;
         let newVersionLink = "";
         if (prevVersion) {
-            newVersionLink = `\n[${newVersion}]: https://github.com/sameboat-platform/frontend/compare/${prevVersion}...${newVersion}`;
+            newVersionLink = `\n[${newVersion}]: https://github.com/sameboat-platform/frontend/compare/${TAG_PREFIX}${prevVersion}...${TAG_PREFIX}${newVersion}`;
         } else {
-            newVersionLink = `\n[${newVersion}]: https://github.com/sameboat-platform/frontend/tree/${newVersion}`;
+            newVersionLink = `\n[${newVersion}]: https://github.com/sameboat-platform/frontend/tree/${TAG_PREFIX}${newVersion}`;
         }
         rebuilt =
             rebuilt.replace(linkPattern, "\n" + newUnreleasedLink + "\n") +
@@ -113,14 +126,39 @@ function stageCommitTag(newVersion, tag) {
     run("git add CHANGELOG.md package.json");
     run(`git commit -m "chore: release ${newVersion}"`);
     if (tag) {
-        run(`git tag -a ${newVersion} -m "Release ${newVersion}"`);
+        const tagName = `${TAG_PREFIX}${newVersion}`;
+        // if tag exists, do not create a duplicate
+        const existing = run(`git tag -l ${tagName}`);
+        if (!existing) {
+            run(`git tag -a ${tagName} -m "Release ${newVersion}"`);
+        } else {
+            console.warn(`Tag ${tagName} already exists; skipping tag creation.`);
+        }
     }
 }
 
 (function main() {
     const args = parseArgs();
+    // Guard: only allow running on main to avoid accidental releases from feature branches
+    try {
+        const branch = run("git rev-parse --abbrev-ref HEAD");
+        if (branch !== "main") {
+            console.error(
+                `Refusing to run release on branch '${branch}'. Switch to 'main' first.`
+            );
+            process.exit(1);
+        }
+    } catch (e) {
+        console.error("Unable to determine current git branch. Are you in a git repository?");
+        process.exit(1);
+    }
     const current = JSON.parse(fs.readFileSync(pkgPath, "utf8")).version;
     const next = bumpVersion(current, args);
+    // Validate changelog before mutating package.json to avoid partial bumps on abort
+    if (!hasUnreleasedContent()) {
+        console.error("Unreleased section empty – aborting to avoid empty release.");
+        process.exit(1);
+    }
     updatePackageJson(next);
     updateChangelog(next);
     stageCommitTag(next, args.tag);

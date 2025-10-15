@@ -153,7 +153,7 @@ export function HealthCheckCard({
           <Button size='xs' variant='outline' onClick={runHealthCheck} isDisabled={status==='idle' || paused}>Refresh now</Button>
         </HStack>
         <Text mt={2} fontSize='xs' opacity={0.6}>
-          If this fails in dev, ensure the backend is running and CORS allows <Code fontSize='xs'>http://localhost:5173</Code>. If you use Actuator defaults, switch the fetch path to <Code fontSize='xs'>/actuator/health</Code>.
+          If this fails in dev, ensure the backend is running and CORS allows <Code fontSize='xs'>http://localhost:5173</Code>. The health endpoint is <Code fontSize='xs'>/actuator/health</Code>.
         </Text>
       </CardBody>
     </Card>

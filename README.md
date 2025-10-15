@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/github/license/sameboat-platform/frontend.svg)](LICENSE)
 [![Dependencies](https://img.shields.io/github/actions/workflow/status/sameboat-platform/frontend/frontend-ci.yml?label=build)](https://github.com/sameboat-platform/frontend/actions)
 [![Coverage](./.github/badges/coverage.svg)](https://github.com/sameboat-platform/frontend/actions/workflows/coverage-badge.yml)
+[![Dependency Audit](https://github.com/sameboat-platform/frontend/actions/workflows/dependency-audit.yml/badge.svg)](https://github.com/sameboat-platform/frontend/actions/workflows/dependency-audit.yml)
 [![Security Policy](https://img.shields.io/badge/security-policy-blue)](./SECURITY.md)
 
 # SameBoat Frontend (Vite + React + TS)
@@ -10,6 +11,12 @@
 ## Overview
 
 SameBoat Frontend is a lightweight Vite + React 19 single-page application scaffold. It focuses on fast local iteration (HMR), strict TypeScript, and a minimal baseline you can extend (routing, API clients, state management) without vendor lock-in.
+
+Live App: https://sameboatplatform.org/
+
+Also available via Netlify default domain: https://app-sameboat.netlify.app/
+
+Note: adopting a dedicated subdomain like https://app.sameboatplatform.org is a common production practice. It cleanly separates marketing/docs (root) from the application, simplifies cookie scoping and CSP, and scales well as you add more subdomains. You can adopt it later without code changes.
 
 ### Planning Artifacts
 
@@ -85,8 +92,18 @@ Add components under `src/components/` and import into pages or `App.tsx`.
 2. Start dev server: `npm run dev` (default http://localhost:5173)
 3. Type-first build: `npm run build` (runs `tsc -b && vite build`)
 4. Preview production bundle: `npm run preview`
-5. Lint before commit: `npm run lint`
-6. (Optional) Auto hooks: Husky runs lint/tests/commitlint pre-push / commit.
+5. Bundle analyze (optional): `npm run analyze` (generates a visual report of bundle composition)
+6. Lint before commit: `npm run lint`
+7. Bundle analysis: `npm run analyze` generates `dist/bundle-stats.html` and opens it.
+
+### Performance Budget (soft)
+
+- Initial app JS (gzip) target: ≤ 250 kB (soft gate; no CI block yet).
+- Use the bundle analyzer to spot large libs and consider:
+    - code-splitting via dynamic `import()`
+    - lighter alternatives to heavy packages
+    - tree-shaking-friendly import paths
+7. (Optional) Auto hooks: Husky runs lint/tests/commitlint pre-push / commit.
 
 ## Environment Variables
 
@@ -114,7 +131,7 @@ Structured error JSON (shape: `{ error, message }`) is surfaced via `err.cause`.
 Example:
 
 ```ts
-const health = await api<HealthResponse>("/api/actuator/health");
+const health = await api<HealthResponse>("/actuator/health");
 ```
 
 Add narrowers / runtime guards in `src/lib/*` (e.g., `health.ts`).
@@ -231,6 +248,7 @@ vi.spyOn(global, "fetch").mockResolvedValueOnce(
 -   Changelog updated when source/docs change (`npm run changelog:check`).
 -   Conventional commit style enforced (Husky + commitlint).
 -   CI replicates local gates: lint → type → tests → changelog check → build.
+ -   Dependency audit runs in CI: High/Critical vulnerabilities fail; Moderate/Low are reported but non-blocking (runtime deps only). See `docs/security/dependency-audit.md`.
 
 ## Contributing (Quick Summary)
 
@@ -261,6 +279,7 @@ npm run build
 -   preview – preview production build locally
 -   test – run Vitest suite
 -   test:coverage – run Vitest with @vitest/coverage-v8 (thresholds enforced)
+-   analyze – build in analyze mode and generate `dist/bundle-stats.html` (auto-opens)
 -   release – run automated version + changelog update script
 -   changelog:check – enforce changelog entry presence
 -   lint / lint:fix – run (and optionally fix) ESLint
@@ -278,6 +297,32 @@ git fetch origin --prune
 
 CI badge & links have been updated to the new organization path.
 
+## Performance Budget (soft targets)
+
+Track these as guidelines (non-blocking) and iterate once stable. Use a bundle analyzer locally and Lighthouse for quick checks.
+
+- JavaScript (gzipped)
+    - Initial JS on home route ≤ 250 KB
+    - Largest single JS chunk ≤ 150 KB
+    - Initial JS requests ≤ 5
+- CSS (gzipped): initial route ≤ 50 KB
+- Web Vitals (lab targets)
+    - LCP ≤ 2.5s (desktop), ≤ 4.0s (simulated mid‑tier mobile)
+    - CLS ≤ 0.10
+    - TBT ≤ 200 ms (desktop lab)
+- Images: avoid render‑blocking images on initial route; lazy‑load non‑critical assets
+
+Later, you can add a non-failing CI job to post bundle/Lighthouse deltas on PRs and convert to hard gates once the app stabilizes.
+
 ## Notes
 
 - Local coverage artifacts (coverage/) are ignored by git; the CI workflow uploads coverage as PR artifacts and updates the badge on main after merge.
+ - If dependency audit fails on High/Critical, prefer updating direct deps. If needed, use `overrides` in `package.json` to force patched transitives:
+     ```json
+     {
+         "overrides": {
+             "pkg@^1": "1.2.3"
+         }
+     }
+     ```
+     As a last resort, use `patch-package` and remove once upstream publishes a fix. Temporary allowlists via `audit-ci` should have an expiration and a tracking issue.

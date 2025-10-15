@@ -1,5 +1,17 @@
 # Things To Do (TTD)
 
+## ASAP (next tiny PRs)
+
+- Adopt GitHub CLI for release and project automation (gh install, auth, basic scripts).
+
+- Add fetch-mocked login success test
+- (Done) Add a “require main branch” guard in `scripts/release.mjs` to avoid accidental releases from feature branches.
+- (Done) Standardize tag naming to `vX.Y.Z` and align CHANGELOG compare links accordingly.
+- (Done) PR template: add a “Post‑merge actions” checklist so setting branch protection required checks is always captured.
+- (Done) CI: Dependency audit step (fail on high/critical) and surface results in PR summary.
+- Observability: introduce a minimal event bus with a console sink for key app events.
+- Docs: expand environment variables reference and add a runtime guard section.
+
 ## UI/UX
 
 -   Debounce rapid backend health status flips by enforcing a minimum skeleton display duration.
@@ -32,6 +44,22 @@
 -   Add a custom CI step that fails if no test files were touched for a PR containing `feat:` or `fix:` commits.
 -   Script/guard to fail if a `feat:` commit lands without any matching diff in `src/__tests__/` (heuristic; allow override via `[skip-test-guard]`).
 -   GitHub Action to auto-assign PR label based on first conventional commit type (feat/fix/docs/chore/refactor/test/perf).
+
+## Performance
+
+-   Route-level code-splitting: convert top-level routes to `React.lazy` + `Suspense` to reduce initial JS.
+-   Vendor chunking: configure `build.rollupOptions.output.manualChunks` to isolate large libs (e.g., framer-motion, chakra-ui) into async chunks used where needed.
+-   Audit heavy deps in analyzer report and evaluate lighter alternatives or partial imports.
+-   Prefer tree-shakable entrypoints (e.g., import only used icons/components; avoid deep wildcard imports).
+-   Consider dynamic imports for rarely used panels (e.g., `RuntimeDebugPanel`) in dev-only builds.
+-   Track regression threshold against soft budget (initial JS ≤ 250 kB gzip) in PR descriptions until we automate a check.
+
+### Project Automation
+
+-   Auto-update the Project “Status” field when a linked PR is merged (project workflows; ensure issues close via closing keywords).
+-   Automated release creation: script adds tag + creates GitHub Release in one step (use gh CLI once adopted).
+-   Script dependency triage or labeling (e.g., label Dependabot PRs by group and auto-add to Project backlog).
+-   Scriptable gating: verify CHANGELOG entry before tagging a release; fail CI otherwise.
     
 ### Dependency / Security Automation
 
@@ -42,27 +70,6 @@
 ## Notes
 
 Add new sections here as areas expand (e.g., Testing, Performance, Accessibility).
-
-
-## Post-0.2.0 Release – First Things To Do
-
-1) Triage remaining 0.2.0 issues
-  - Move non-blockers to 0.2.1 (patch) or 0.3.0 (next minor), or clear milestone for truly "anytime" tasks.
-  - Close the 0.2.0 milestone after moving leftovers; keep Project board statuses accurate.
-
-2) CI nicety: add coverage percentage to PR job summary (if not already)
-  - In coverage-badge workflow, after parsing coverage, append to $GITHUB_STEP_SUMMARY for easy reviewer visibility.
-
-3) Branch protection
-  - Make the Coverage Badge workflow a required check on main so PRs enforce coverage consistently.
-
-4) CHANGELOG hygiene
-  - Ensure 0.2.0 section lists only shipped changes; deferred items remain in issues/projects.
-
-5) Follow-ups (small PRs)
-  - Dependency audit step (fail on high/critical).
-  - Minimal observability event bus + console sink.
-  - Docs: environment variables + runtime guard.
 
 
 ### Potential workflow--for badge coverage updating:

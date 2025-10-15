@@ -14,7 +14,7 @@ export const API_BASE =
 function normalizeJoin(base: string, rel: string): string {
     const b = base.replace(/\/$/, "");
     const r = rel.startsWith("/") ? rel : `/${rel}`;
-    // Collapse any repeated '/api' boundary: e.g. '.../api' + '/api/actuator/health'
+    // Collapse any repeated '/api' boundary: e.g. '.../api' + '/api/auth/login'
     return (b + r).replace(/\/api(?:\/api)+/g, "/api");
 }
 

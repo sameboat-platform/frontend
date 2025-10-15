@@ -1,0 +1,86 @@
+name: Dependency Audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit dependencies (fail on High/Critical)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      # Run audit-ci if allowlist config is present, otherwise run npm audit.
+      - name: audit-ci (allowlist support)
+        if: hashFiles('.github/audit-ci.json') != ''
+        run: npx --yes audit-ci --config .github/audit-ci.json --critical --high --omit-dev --json > audit.json || true
+
+      - name: npm audit (runtime deps only)
+        if: hashFiles('.github/audit-ci.json') == ''
+        run: npm audit --omit=dev --audit-level=high --json > audit.json
+
+      - name: Summarize audit in PR/job summary
+        if: always()
+        run: |
+          node -e "
+          const fs = require('fs');
+          let out = '';
+          let j = {};
+          try {
+            j = JSON.parse(fs.readFileSync('audit.json', 'utf8'));
+          } catch(e) {
+            out = '### Dependency audit\nFailed to parse audit output.';
+          }
+          if (!out) {
+            if (fs.existsSync('.github/audit-ci.json')) {
+              // Summarize audit-ci output
+              out = [
+                '### Dependency audit (audit-ci)',
+                `- Critical: ${j.summary?.critical || 0}`,
+                `- High: ${j.summary?.high || 0}`,
+                `- Moderate: ${j.summary?.moderate || 0}`,
+                `- Low: ${j.summary?.low || 0}`,
+                '',
+                'Policy: fail on High/Critical only. Moderate/Low are reported but do not block.',
+                'Fallbacks: use npm overrides for patched transitives, patch-package as last resort, or temporary allowlist with expiration (see docs/security/dependency-audit.md).'
+              ].join('\n');
+            } else {
+              // Summarize npm audit output
+              const v = j.vulnerabilities || {};
+              const get = (k) => (typeof v[k] === 'number' ? v[k] : (v[k]?.count || 0));
+              out = [
+                '### Dependency audit',
+                `- Critical: ${get('critical')}`,
+                `- High: ${get('high')}`,
+                `- Moderate: ${get('moderate')}`,
+                `- Low: ${get('low')}`,
+                '',
+                'Policy: fail on High/Critical only. Moderate/Low are reported but do not block.',
+                'Fallbacks: use npm overrides for patched transitives, patch-package as last resort, or temporary allowlist with expiration (see docs/security/dependency-audit.md).'
+              ].join('\n');
+            }
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);
+          "
