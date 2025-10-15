@@ -1,6 +1,5 @@
 name: Bug Report
-about: ''
-title: ''
+title: 'Bug: [short description]'
 labels: ["type:fix", "roadmap"]
 assignees: ''
 description: Report a bug or regression
