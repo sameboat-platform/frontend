@@ -36,7 +36,7 @@ export default function RuntimeDebugPanel() {
 
   useEffect(() => {
     if (!bootstrapped) return; // wait until bootstrap completes to avoid early 401 noise
-  const targets = [`${API_BASE}/api/actuator/health`, `${API_BASE}/api/me`];
+  const targets = [`${API_BASE}/actuator/health`, `${API_BASE}/api/me`];
     let cancelled = false;
     const run = async () => {
       const results: NetProbe[] = [];

@@ -5,7 +5,7 @@ import { Card, CardHeader, CardBody, Heading, Flex, Spacer, Badge, HStack, Skele
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface HealthCheckCardProps {
-  path?: string;               // health endpoint, default '/api/actuator/health'
+  path?: string;               // health endpoint, default '/actuator/health'
   intervalMs?: number;         // auto refresh interval
   minSkeletonMs?: number;      // minimum time skeleton remains
   onStatusChange?: (status: string) => void; // optional callback
@@ -15,7 +15,7 @@ interface HealthCheckCardProps {
 type HealthState = 'idle' | 'checking' | 'ok' | 'error';
 
 export function HealthCheckCard({
-  path = '/api/actuator/health',
+  path = '/actuator/health',
   intervalMs,
   minSkeletonMs = 450,
   onStatusChange,
@@ -153,7 +153,7 @@ export function HealthCheckCard({
           <Button size='xs' variant='outline' onClick={runHealthCheck} isDisabled={status==='idle' || paused}>Refresh now</Button>
         </HStack>
         <Text mt={2} fontSize='xs' opacity={0.6}>
-          If this fails in dev, ensure the backend is running and CORS allows <Code fontSize='xs'>http://localhost:5173</Code>. With the new routing, the health endpoint is <Code fontSize='xs'>/api/actuator/health</Code>.
+          If this fails in dev, ensure the backend is running and CORS allows <Code fontSize='xs'>http://localhost:5173</Code>. The health endpoint is <Code fontSize='xs'>/actuator/health</Code>.
         </Text>
       </CardBody>
     </Card>

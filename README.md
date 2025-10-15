@@ -131,7 +131,7 @@ Structured error JSON (shape: `{ error, message }`) is surfaced via `err.cause`.
 Example:
 
 ```ts
-const health = await api<HealthResponse>("/api/actuator/health");
+const health = await api<HealthResponse>("/actuator/health");
 ```
 
 Add narrowers / runtime guards in `src/lib/*` (e.g., `health.ts`).
