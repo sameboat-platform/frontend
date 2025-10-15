@@ -10,9 +10,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - CI: Dependency Audit workflow (`dependency-audit.yml`) runs `npm audit` on runtime dependencies; fails on High/Critical, summarizes results in PR/job summary.
 - Security docs: dependency audit policy and fallbacks (`docs/security/dependency-audit.md`).
 - Bundle analysis script (`npm run analyze`) that builds in analyze mode, generates a bundle report, saves it to `dist/bundle-stats.html`, and auto-opens it.
+- Dev-time env guard: lightweight checks warn on malformed `VITE_API_BASE_URL`, invalid `VITE_HEALTH_REFRESH_MS` (< 1000), or non-URL `VITE_FEEDBACK_URL`.
 
 ### Changed
 - Release script hardening: refuse to run unless on `main` (require‑main guard) to prevent accidental releases from feature branches.
+- Health endpoint alignment: frontend now calls `/actuator/health` (no `/api` prefix); dev panel probes updated accordingly.
+
+### Housekeeping
+- `.env.example` tidied (duplicate keys removed; clearer comments).
+
+### Issue status (to close with this PR)
+- #30 perf/bundle: analyzer + soft budget documented (complete)
+- #29 docs/env: docs + `.env.example` + dev-time guard added (complete)
+- #27 release: changelog verification and main-branch guard (complete)
+- #26 ci: dependency audit workflow failing on High/Critical (complete)
 
 ### Documentation
 - PR template now includes a "Post‑merge actions" checklist (required checks, tag push, milestone closure).
