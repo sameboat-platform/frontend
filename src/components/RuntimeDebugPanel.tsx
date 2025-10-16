@@ -20,7 +20,7 @@ type ProbeHistoryEntry = NetProbe;
 // Can be collapsed to a badge. Will NOT be shown in production builds.
 // Important: This module hard-guards at the very top of the component to
 // avoid running any hooks/effects in production. Also gated at the render
-// site (App.tsx) using import.meta.env.DEV for extra safety and tree-shaking.
+// site (App.tsx) using isDev() for extra safety and tree-shaking.
 export default function RuntimeDebugPanel() {
   // Hard guard: never run any hooks/effects in production
   // This executes before any hooks are declared, so no side-effects in prod.
