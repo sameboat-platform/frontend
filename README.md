@@ -165,6 +165,15 @@ Important: Do NOT call bare `/me` from the client. Always use `/api/me` to avoid
 
 The authentication layer uses a React Context (`AuthProvider`) that performs exactly one bootstrap fetch to `/api/me` to hydrate the session user (cookie-based). React 19 StrictMode double-mount is neutralized via a module-level flag ensuring `refresh()` is not called twice.
 
+### Bootstrap flow (why you see `/api/me` at startup)
+
+- On app mount, `AuthProvider` calls `GET /api/me` once to determine if a session cookie is present and valid.
+- If the user is not logged in, the backend returns `401`. This is expected and handled silently:
+    - Before bootstrap completes, a `401` is treated as “not signed in” (no error UI/state).
+    - After bootstrap, subsequent `401`s (e.g., expired session) surface as an auth error for the user to act on.
+- In dev tools, you will still see a red 401 entry in the Network/Console—that’s an intentional server response for unauthenticated users, and not an application error. The client catches and handles it without throwing.
+- Extra logs only appear if you opt-in via `VITE_API_DEBUG_AUTH`.
+
 ### Key Points
 
 -   Provider: `AuthProvider` (`src/state/auth/auth-context.tsx`) – wraps the router.
