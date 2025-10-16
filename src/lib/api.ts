@@ -1,13 +1,13 @@
+
 // Base API URL
-// Priority: explicit VITE_API_BASE_URL > production default > local dev fallback
-const PROD_DEFAULT = "https://api-sameboat.onrender.com";
+// Priority: explicit VITE_API_BASE_URL > (prod) same-origin via Netlify proxy > (dev) localhost
 const DEV_FALLBACK = "http://localhost:8080";
 
 export const API_BASE =
-    (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(
-        /\/$/,
-        ""
-    ) ?? (import.meta.env.DEV ? DEV_FALLBACK : PROD_DEFAULT);
+  // if you explicitly set VITE_API_BASE_URL, we’ll use it as-is
+  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ??
+  // otherwise, in production use same-origin (Netlify redirects will proxy to Render)
+  (import.meta.env.PROD ? "" : DEV_FALLBACK);
 
 // If the backend already exposes /api/*, callers should pass paths WITH /api/*.
 // To avoid accidental double '/api/api', we collapse duplicate segments.
