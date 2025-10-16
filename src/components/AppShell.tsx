@@ -2,6 +2,7 @@ import { Box, Container, Flex, HStack, IconButton, Link as CLink, Spacer, useCol
 import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { Link } from 'react-router-dom';
 import type { PropsWithChildren } from 'react';
+import Footer from './Footer';
 
 export default function AppShell({ children }: PropsWithChildren) {
   const { colorMode, toggleColorMode } = useColorMode();
@@ -27,7 +28,8 @@ export default function AppShell({ children }: PropsWithChildren) {
       </Box>
       <Container id="main" as="main" maxW="container.sm" py={10} flex="1 0 auto">
         {children}
-      </Container>
+      </Container> 
+      <Footer />
     </Flex>
   );
 }
