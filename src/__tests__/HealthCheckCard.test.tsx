@@ -47,11 +47,12 @@ describe('HealthCheckCard', () => {
     fireEvent.click(refreshBtn);
     fireEvent.click(refreshBtn);
 
-    await waitFor(() => expect(screen.getByTestId('health-paused')).toBeInTheDocument());
-    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    // CI timing can interleave clicks and network promises; ensure the 3rd call resolved
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(3));
+    await screen.findByTestId('health-paused');
 
     // Resume should trigger an immediate fetch and show healthy
-  fireEvent.click(screen.getByTestId('resume-btn'));
-  await waitFor(() => expect(screen.getByText(/Healthy/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('resume-btn'));
+    await waitFor(() => expect(screen.getByText(/Healthy/i)).toBeInTheDocument());
   });
 });

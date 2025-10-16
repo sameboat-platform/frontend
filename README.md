@@ -136,6 +136,31 @@ const health = await api<HealthResponse>("/actuator/health");
 
 Add narrowers / runtime guards in `src/lib/*` (e.g., `health.ts`).
 
+### Environment helpers
+
+Use `src/lib/env.ts` to gate dev/test/prod behavior consistently across the app:
+
+- `isDev()` – true for Vite development builds
+- `isProd()` – true for Vite production builds
+- `isTest()` – true when running tests (Vitest)
+
+Recommended patterns:
+
+- Place `if (isProd()) return null;` at the very top of dev-only components, before any React hooks, to prevent effects from running in production bundles.
+- At call-sites, conditionally render dev-only components with `{isDev() && <DevPanel />}` for clarity and better tree-shaking.
+
+### Canonical endpoints
+
+- Health: `/actuator/health` (public; no credentials).
+- Version: `/api/version` (public; optional for display).
+- Auth (cookie session; always include credentials):
+    - `POST /api/auth/login`
+    - `POST /api/auth/register`
+    - `POST /api/auth/logout`
+    - `GET /api/me` (bootstrap + subsequent session checks)
+
+Important: Do NOT call bare `/me` from the client. Always use `/api/me` to avoid ambiguity and align with backend policy and CSP/proxy rules.
+
 ## Authentication System
 
 The authentication layer uses a React Context (`AuthProvider`) that performs exactly one bootstrap fetch to `/api/me` to hydrate the session user (cookie-based). React 19 StrictMode double-mount is neutralized via a module-level flag ensuring `refresh()` is not called twice.
@@ -177,7 +202,12 @@ Because components import only `useAuth()` (wrapper), migrating to Zustand requi
 -   Cumulative error count badge; copy buttons for API base & user ID.
 -   Manual refresh & force-refresh controls for diagnosing bootstrap issues.
 
-Remove or disable this panel for production builds (guarded by `import.meta.env.PROD`).
+Remove or disable this panel for production builds (guarded by `isProd()`). In this codebase, both `RuntimeDebugPanel` and `UserSummary` are DEV-only:
+
+- `RuntimeDebugPanel` short-circuits at the top of the component if `isProd()` and is rendered only when `isDev()`.
+- `UserSummary` is rendered only when `isDev()`.
+
+This ensures they do not appear or run any effects in production, preventing unintended network probes (e.g., `/api/me`).
 
 ## Testing Workflow
 
