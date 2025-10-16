@@ -5,6 +5,7 @@ to = "https://api-sameboat.onrender.com/:splat"
 status = 200
 force = true
 
+# Proxy /actuator/* to the backend (health/info endpoints are not under /api)
 [[redirects]]
 from = "/actuator/*"
 to = "https://api-sameboat.onrender.com/actuator/:splat"
@@ -15,7 +16,10 @@ force = true
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; base-uri 'self'; connect-src 'self'; img-src 'self' data: https:; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; upgrade-insecure-requests"
+    # Allow same-origin connections and (optionally) direct calls to the API origin.
+    # If you set VITE_API_BASE_URL="" to use the Netlify proxy, 'self' is sufficient.
+    # If you leave API_BASE pointing at https://api-sameboat.onrender.com, keep it in connect-src.
+    Content-Security-Policy = "default-src 'self'; base-uri 'self'; connect-src 'self' https://api-sameboat.onrender.com; img-src 'self' data: https:; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'; frame-src https://app.netlify.com; script-src 'self'; style-src 'self' 'unsafe-inline'; upgrade-insecure-requests"
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
