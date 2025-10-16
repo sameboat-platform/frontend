@@ -44,6 +44,12 @@ let didInitialBootstrapAttempt = false;
 // Vitest exposes VITEST env var; we detect it without using `any` casts
 const isVitest = typeof process !== 'undefined' && Boolean((process as unknown as { env?: Record<string, unknown> }).env?.VITEST);
 
+/**
+ * AuthProvider component to provide authentication context.
+ *
+ * @param param0 - The props for the component.
+ * @returns {JSX.Element} The rendered component.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<AuthStore['status']>('idle');
@@ -59,7 +65,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
-  if (import.meta.env.DEV && !isVitest) console.debug('[auth] mounted', { mountedRef: mountedRef.current });
 
   // Removed previous heartbeat interval that logged every second until bootstrap; fail-safe timeout below remains sufficient.
 
@@ -72,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStatus('error');
   }, []);
 
+  // Clear error state
   const clearError = useCallback(() => {
     if (!mountedRef.current) return;
     setErrorCode(undefined);
@@ -79,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (status === 'error') setStatus(user ? 'authenticated' : 'idle');
   }, [status, user]);
 
+  // Refresh user state from /me endpoint
   const refresh = useCallback(async () => {
     const controller = new AbortController();
     let data: unknown | undefined;
@@ -129,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() end: bootstrapped = true');
   }, [clearError, recordError]);
 
+  // Login action
   const login = useCallback<AuthStore['login']>(async (email, password) => {
     const controller = new AbortController();
     setStatus('loading');
@@ -172,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return success;
   }, [clearError, recordError, refresh]);
 
+  // Register action
   const register = useCallback<AuthStore['register']>(async (email, password) => {
     const controller = new AbortController();
     setStatus('loading');
@@ -212,6 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return success;
    }, [clearError, recordError, refresh]);
 
+  // Logout action
   const logout = useCallback<AuthStore['logout']>(async () => {
     const controller = new AbortController();
     setStatus('loading');
@@ -252,6 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(failSafe);
   }, [refresh]);
 
+  // Memoize context value to avoid unnecessary rerenders
   const value: AuthStore = useMemo(() => ({
     user,
     status,

@@ -2,6 +2,10 @@ import { useLocation, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Box } from '@chakra-ui/react';
 
+/**
+ * Global route transition component that animates route changes.
+ * @returns {JSX.Element} The rendered component.
+ */
 export function GlobalRouteTransition() {
   const location = useLocation();
   return (

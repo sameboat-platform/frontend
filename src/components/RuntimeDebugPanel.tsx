@@ -11,10 +11,12 @@ interface NetProbe {
   ts: number;
 }
 
-// Separate type alias (was empty interface – flagged by lint rule)
+// Represents a single entry in the probe history.
 type ProbeHistoryEntry = NetProbe;
 
-// Simple dev-only floating panel with auth + network info.
+// RuntimeDebugPanel: A floating panel showing runtime debug info (dev only).
+// Shows auth state, API_BASE, user info, and probes key endpoints every 15s.
+// Can be collapsed to a badge. Will NOT be shown in production builds.
 export default function RuntimeDebugPanel() {
   const { user, status, errorCode, errorMessage, bootstrapped, lastFetched, refresh } = useAuth();
   const [renderTs, setRenderTs] = useState(Date.now());
