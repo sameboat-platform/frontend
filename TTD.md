@@ -12,6 +12,28 @@
 - Observability: introduce a minimal event bus with a console sink for key app events.
 - Docs: expand environment variables reference and add a runtime guard section.
 
+## Testing Coverage
+
+### Recently added (done)
+
+- API wrapper baseline tests (`src/__tests__/api.test.ts`)
+  - buildUrl passes through absolute URLs
+  - returns parsed JSON on success
+  - returns text when response is not JSON
+  - throws with structured cause on error JSON (assert message + cause)
+
+- Utility tests (`src/__tests__/utils.test.ts`)
+  - health.isHealthResponse type guard: valid/invalid shapes
+  - env helpers: isDev/isProd boolean smoke; isTest true under Vitest
+
+These provide a stable coverage floor with minimal maintenance.
+
+### Next candidates (small, high-yield)
+
+- api.ts: fallback path when JSON parse fails but body is text (exercise final catch)
+- health UI: HealthCheckCard handles non-JSON text payload (status display remains robust)
+- auth flow: happy-path login and logout (use fetch mocks, avoid complex UI assertions)
+
 ## UI/UX
 
 -   Debounce rapid backend health status flips by enforcing a minimum skeleton display duration.
