@@ -12,6 +12,12 @@ to = "https://api-sameboat.onrender.com/actuator/:splat"
 status = 200
 force = true
 
+# --- SPA fallback (MUST be last) ---
+[[redirects]]
+from = "/*"
+to   = "/index.html"
+status = 200
+
 # Security headers
 [[headers]]
   for = "/*"
