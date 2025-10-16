@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { API_BASE } from '../lib/api';
+import { buildUrl } from '../lib/api';
+import { isProd } from '../lib/env';
 import { useAuth } from '../state/auth/useAuth';
 import { Box, Code, Divider, Flex, HStack, Stack, Text, Badge, useColorModeValue, IconButton, Tooltip, Collapse, usePrefersReducedMotion, Link } from '@chakra-ui/react';
 import { RepeatIcon, ViewOffIcon, CopyIcon, ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
@@ -17,7 +18,13 @@ type ProbeHistoryEntry = NetProbe;
 // RuntimeDebugPanel: A floating panel showing runtime debug info (dev only).
 // Shows auth state, API_BASE, user info, and probes key endpoints every 15s.
 // Can be collapsed to a badge. Will NOT be shown in production builds.
+// Important: This module hard-guards at the very top of the component to
+// avoid running any hooks/effects in production. Also gated at the render
+// site (App.tsx) using import.meta.env.DEV for extra safety and tree-shaking.
 export default function RuntimeDebugPanel() {
+  // Hard guard: never run any hooks/effects in production
+  // This executes before any hooks are declared, so no side-effects in prod.
+  if (isProd()) return null;
   const { user, status, errorCode, errorMessage, bootstrapped, lastFetched, refresh } = useAuth();
   const [renderTs, setRenderTs] = useState(Date.now());
 
@@ -38,13 +45,13 @@ export default function RuntimeDebugPanel() {
 
   useEffect(() => {
     if (!bootstrapped) return; // wait until bootstrap completes to avoid early 401 noise
-  const targets = ['/actuator/health', `${API_BASE}/me`];
+  const targets = ['/actuator/health', '/api/me'];
     let cancelled = false;
     const run = async () => {
       const results: NetProbe[] = [];
       for (const t of targets) {
         try {
-          const res = await fetch(t, { credentials: 'include' });
+          const res = await fetch(buildUrl(t), { credentials: 'include' });
           results.push({ path: t, status: res.status, ok: res.ok, ts: Date.now() });
         } catch {
           results.push({ path: t, status: 'ERR', ts: Date.now() });
@@ -122,7 +129,7 @@ export default function RuntimeDebugPanel() {
           </HStack>
           <HStack spacing={1}>
             <Tooltip label='Copy API_BASE'>
-              <IconButton aria-label='copy api base' icon={<CopyIcon />} size='xs' variant='ghost' onClick={() => copy(API_BASE)} />
+              <IconButton aria-label='copy api base' icon={<CopyIcon />} size='xs' variant='ghost' onClick={() => copy(buildUrl('/'))} />
             </Tooltip>
             {user && (
               <Tooltip label='Copy user id'>
@@ -151,7 +158,7 @@ export default function RuntimeDebugPanel() {
         </Flex>
         <Collapse in={!collapsed} animateOpacity={!prefersReducedMotion} style={{ overflow: 'visible' }}>
           <Stack spacing={1} lineHeight={1.3} mb={2}>
-            <Text><Text as='span' opacity={0.6}>API_BASE:</Text> <Code fontSize='2xs'>{API_BASE}</Code></Text>
+            <Text><Text as='span' opacity={0.6}>API_BASE:</Text> <Code fontSize='2xs'>{buildUrl('/')}</Code></Text>
             <Text><Text as='span' opacity={0.6}>bootstrapped:</Text> {String(bootstrapped)}</Text>
             <Text><Text as='span' opacity={0.6}>render:</Text> {new Date(renderTs).toLocaleTimeString()}</Text>
             <Text><Text as='span' opacity={0.6}>status:</Text> {status}</Text>
@@ -185,6 +192,5 @@ export default function RuntimeDebugPanel() {
       </Stack>
     </Box>
   );
-  if (import.meta.env.PROD) return null; // dev only
   return panel;
 }

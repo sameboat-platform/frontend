@@ -4,6 +4,7 @@ import { Code, Heading, Flex, Button, HStack, Text, Box, Container, Link, Stack 
 import { useAuth } from "../state/auth/useAuth";
 import UserSummary from "../components/UserSummary";
 import HealthCheckCard from "../components/HealthCheckCard";
+import { isDev } from "../lib/env";
 
 export default function Home() {
 
@@ -48,7 +49,7 @@ export default function Home() {
 
         <HealthCheckCard />
 
-      {user && <UserSummary />}
+      {isDev() && user && <UserSummary />}
       </Stack>
     </Container>
   );

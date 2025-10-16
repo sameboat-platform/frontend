@@ -6,8 +6,9 @@ import { isBackendAuthErrorPayload, mapAuthError } from './errors';
 import { emit } from '../../lib/events';
 
 // Endpoint paths (centralized so migrations are single-touch)
-// NOTE: User self endpoint on backend is dual-mapped as /me and /api/me (NOT /auth/me)
-// Previous value '/api/auth/me' caused 401s because that route does not return the session user.
+// Canonical: use '/api/me' for the authenticated user endpoint.
+// Do NOT call bare '/me' from the client to avoid ambiguity and future policy/security drift.
+// (Historical note: '/api/auth/me' is not the correct session user endpoint.)
 const LOGIN_PATH = '/api/auth/login';
 const REGISTER_PATH = '/api/auth/register';
 const ME_PATH = '/api/me';
