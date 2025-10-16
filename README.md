@@ -5,7 +5,7 @@
 [![Coverage](./.github/badges/coverage.svg)](https://github.com/sameboat-platform/frontend/actions/workflows/coverage-badge.yml)
 [![Dependency Audit](https://github.com/sameboat-platform/frontend/actions/workflows/dependency-audit.yml/badge.svg)](https://github.com/sameboat-platform/frontend/actions/workflows/dependency-audit.yml)
 [![Security Policy](https://img.shields.io/badge/security-policy-blue)](./SECURITY.md)
-
+[![Netlify Status](https://api.netlify.com/api/v1/badges/73bee901-5d98-4400-9fac-17cd8d86c72e/deploy-status)](https://app.netlify.com/projects/app-sameboat/deploys)
 # SameBoat Frontend (Vite + React + TS)
 
 ## Overview

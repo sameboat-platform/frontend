@@ -5,6 +5,12 @@ to = "https://api-sameboat.onrender.com/:splat"
 status = 200
 force = true
 
+[[redirects]]
+from = "/actuator/*"
+to = "https://api-sameboat.onrender.com/actuator/:splat"
+status = 200
+force = true
+
 # Security headers
 [[headers]]
   for = "/*"
