@@ -202,10 +202,10 @@ Because components import only `useAuth()` (wrapper), migrating to Zustand requi
 -   Cumulative error count badge; copy buttons for API base & user ID.
 -   Manual refresh & force-refresh controls for diagnosing bootstrap issues.
 
-Remove or disable this panel for production builds (guarded by `import.meta.env.PROD`). In this codebase, both `RuntimeDebugPanel` and `UserSummary` are DEV-only:
+Remove or disable this panel for production builds (guarded by `isProd()`). In this codebase, both `RuntimeDebugPanel` and `UserSummary` are DEV-only:
 
-- `RuntimeDebugPanel` short-circuits at the top of the component if `import.meta.env.PROD` and is rendered only when `import.meta.env.DEV`.
-- `UserSummary` is rendered only when `import.meta.env.DEV`.
+- `RuntimeDebugPanel` short-circuits at the top of the component if `isProd()` and is rendered only when `isDev()`.
+- `UserSummary` is rendered only when `isDev()`.
 
 This ensures they do not appear or run any effects in production, preventing unintended network probes (e.g., `/api/me`).
 
