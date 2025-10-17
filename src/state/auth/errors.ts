@@ -93,7 +93,7 @@ export function normalizeCode(raw?: string): AuthErrorCode {
     "FORBIDDEN": "BAD_CREDENTIALS",    // keep consistent UX unless you want a distinct message
     "ACCOUNT_LOCKED": "ACCOUNT_LOCKED",
     "USER_DISABLED": "USER_DISABLED",
-    "NETWORK_DISABLED": "NETWORK",     // disambiguates the example flagged in review
+    "NETWORK_DISABLED": "NETWORK",     // treat network-related disables as network errors, not user disables
     "OFFLINE": "NETWORK",
     "TOO_MANY_REQUESTS": "RATE_LIMITED",
   };
