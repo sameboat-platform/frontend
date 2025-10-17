@@ -32,7 +32,21 @@ export function mapAuthError(
     return { code: normalized, message: FRIENDLY[normalized] || fallback || code };
 }
 
-// Normalize arbitrary backend error string codes to our AuthErrorCode union
+/**
+ * Normalizes arbitrary backend error identifiers into a stable `AuthErrorCode` value.
+ *
+ * This function exists because backend services may return slightly different
+ * error strings (e.g., "bad_credentials", "invalid_password", or "401_BAD_CREDENTIALS").
+ * To ensure consistent UI messaging, we map these variants to a common union value.
+ *
+ * Strategy:
+ * - Perform a lowercase substring match against known patterns.
+ * - Return the corresponding `AuthErrorCode`.
+ * - If no pattern matches, fall back to "UNKNOWN".
+ *
+ * @param raw - Raw error code or message from the backend or network layer.
+ * @returns A normalized `AuthErrorCode` for display and analytics.
+ */
 function normalizeCode(c: string): AuthErrorCode {
   const up = c.toUpperCase();
   if (up.includes('BAD_CREDENTIAL') || up === 'UNAUTHORIZED' || up === 'FORBIDDEN') return 'BAD_CREDENTIALS';
