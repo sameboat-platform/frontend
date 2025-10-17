@@ -153,7 +153,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     bootstrappedRef.current = true;
     if (mountedRef.current) setBootstrapped(true);
     if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() end: bootstrapped = true');
-  }).catch(() => undefined), [clearError, recordError, withInFlight]);
+  }).catch((err) => {
+    if (import.meta.env.DEV && !isVitest) {
+      console.error('[auth] refresh() error:', err);
+    }
+    return undefined;
+  }), [clearError, recordError, withInFlight]);
 
   // Login action
   const login = useCallback<AuthStore['login']>(async (email, password) => withInFlight(async () => {
