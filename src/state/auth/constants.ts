@@ -1,3 +1,1 @@
-
-
 export const AUTH_IN_FLIGHT_ERROR = "AUTH_IN_FLIGHT";
