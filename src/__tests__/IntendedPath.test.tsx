@@ -11,6 +11,15 @@ function LocationEcho() {
 }
 
 describe('intendedPath redirect', () => {
+
+  const ME_PATH = '/me';
+  const LOGIN_PATH = '/login';
+  const FOO_QUERY = '?foo=1';
+  const HASH_TOP = '#top';
+
+  const USER_EMAIL_EXAMPLE = 'user@example.com';
+  const USER_PASSWORD_EXAMPLE = 'abcdef';
+
   const originalFetch = global.fetch;
 
   beforeEach(() => {
@@ -39,10 +48,10 @@ describe('intendedPath redirect', () => {
   it('preserves full path (pathname+search+hash) and navigates to it after login', async () => {
     render(
       <AuthProvider>
-        <MemoryRouter initialEntries={[{ pathname: '/me', search: '?foo=1', hash: '#top' }]}>        
+        <MemoryRouter initialEntries={[{ pathname: ME_PATH, search: FOO_QUERY, hash: HASH_TOP }]}>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/me" element={<ProtectedRoute><LocationEcho /></ProtectedRoute>} />
+            <Route path={LOGIN_PATH} element={<Login />} />
+            <Route path={ME_PATH} element={<ProtectedRoute><LocationEcho /></ProtectedRoute>} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
@@ -54,13 +63,13 @@ describe('intendedPath redirect', () => {
     const submit = screen.getByRole('button', { name: /sign in/i });
 
     // Enter valid credentials and submit
-    fireEvent.change(email, { target: { value: 'user@example.com' } });
-    fireEvent.change(password, { target: { value: 'abcdef' } });
+    fireEvent.change(email, { target: { value: USER_EMAIL_EXAMPLE } });
+    fireEvent.change(password, { target: { value: USER_PASSWORD_EXAMPLE } });
     fireEvent.click(submit);
 
     // After login resolves, we should land back on the intended path including query + hash
     await waitFor(() => {
-      expect(screen.getByTestId('loc-echo')).toHaveTextContent('/me?foo=1#top');
+      expect(screen.getByTestId('loc-echo')).toHaveTextContent(`${ME_PATH}${FOO_QUERY}${HASH_TOP}`);
     });
   });
 });
