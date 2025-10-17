@@ -1,8 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthStore, AuthUser, AuthErrorCode } from './types';
-import { api } from '../../lib/api';
 import { isBackendAuthErrorPayload, mapAuthError } from './errors';
+import { AUTH_IN_FLIGHT_ERROR } from "./constants";
+import { api } from '../../lib/api';
 import { emit } from '../../lib/events';
 
 // Endpoint paths (centralized so migrations are single-touch)
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Simple guard to avoid overlapping auth actions
   const withInFlight = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
     if (inFlight) {
-      return Promise.reject(new Error('AUTH_IN_FLIGHT')) as Promise<T>;
+      return Promise.reject(new Error(AUTH_IN_FLIGHT_ERROR)) as Promise<T>;
     }
     setInFlight(true);
     try {
