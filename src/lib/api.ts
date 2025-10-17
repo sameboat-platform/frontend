@@ -35,6 +35,10 @@ function tryParseErrorPayload(text: string): ErrorPayload | undefined {
     }
 }
 
+// Generic API fetch wrapper with JSON handling and error wrapping.
+// Always sends cookies (credentials: 'include') for session auth.
+// Throws on HTTP errors with augmented Error.message and optional .cause.
+// Returns parsed JSON or text response. Caller must type-assert T as needed.
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     const url = buildUrl(path);
     if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
