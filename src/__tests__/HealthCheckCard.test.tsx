@@ -46,10 +46,8 @@ describe('HealthCheckCard', () => {
     await screen.findByRole('alert'); // error alert present
     const refreshBtn = screen.getByRole('button', { name: /refresh now/i });
     const user = userEvent.setup();
-    // Note on sequencing:
-    // - Use userEvent (async) instead of fireEvent to better mirror real clicks.
-    // - After each click, await the fetch call count to advance before the next click.
-    //   This prevents CI timing flakes where promises/interleaved timers delay the mock.
+    // Use async userEvent clicks and await fetch call count after each click
+    // to avoid CI timing flakes from delayed promises/timers.
     await user.click(refreshBtn); // 2nd call
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
     await user.click(refreshBtn); // 3rd call
