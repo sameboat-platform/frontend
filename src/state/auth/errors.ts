@@ -4,7 +4,7 @@ import type { AuthErrorCode } from './types';
 
 const FRIENDLY: Record<AuthErrorCode, string> = {
     BAD_CREDENTIALS: 'Email or password is incorrect.',
-    ACCOUNT_LOCKED: 'Your account is locked. Please contact support.',
+    ACCOUNT_LOCKED: 'Your account is locked. Check your email and/or contact support.',
     USER_DISABLED: 'Your account is disabled. Please contact support.',
     RATE_LIMITED: 'Too many attempts. Please wait and try again.',
     NETWORK: 'Network error. Check your connection and try again.',
