@@ -1,5 +1,3 @@
-// src/auth/types.ts
-
 export type AuthErrorCode =
   | "BAD_CREDENTIALS"
   | "ACCOUNT_LOCKED"
