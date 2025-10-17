@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           if (mountedRef.current) {
             setUser(null);
-            recordError('NOT_AUTHORIZED', mapAuthError('UNAUTHORIZED'));
+            recordError('UNKNOWN', 'You are not authorized. Please sign in.');
           }
           if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() error after bootstrap', e);
         }

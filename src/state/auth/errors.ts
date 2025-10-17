@@ -16,18 +16,8 @@ const FRIENDLY: Record<AuthErrorCode, string> = {
 };
 
 /**
- * Normalizes arbitrary backend error identifiers/messages into a stable `AuthErrorCode`.
- * Strategy (in priority order):
- *  1) Canonicalize: uppercase, trim, collapse non-alphanumerics to underscores.
- *  2) Exact phrase matches (e.g., "NETWORK_DISABLED"), then HTTP status codes.
- *  3) Token/word-boundary matches via regex or token set (avoids substring collisions).
- *  4) Conservative substring fallback.
- *  5) Default to "UNKNOWN".
- * Rationale:
- *  Backends may emit heterogeneous codes/messages (e.g., "bad_credentials",
- *  "401 Unauthorized", "internal server error", "network_disabled"). Ordering and
- *  boundary-aware checks prevent false positives like "NETWORK_DISABLED" matching both
- *  NETWORK and USER_DISABLED.
+ * Backend auth error payload structure.
+ * All fields are optional since backend may vary.
  */
 export interface BackendAuthErrorPayload {
     error: string;
