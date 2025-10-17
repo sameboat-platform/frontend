@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../state/auth/useAuth";
 import type { FormEvent, ChangeEvent } from "react";
 import { FormField } from "../components/FormField";
@@ -7,9 +7,8 @@ import { Alert, AlertIcon, Button, VStack } from '@chakra-ui/react';
 import { AuthForm } from '../components/AuthForm';
 
 export default function Login() {
-  const { login, errorMessage, clearError } = useAuth();
+  const { login, errorMessage, clearError, intendedPath, setIntendedPath } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,10 +28,12 @@ export default function Login() {
     setSubmitting(true);
   const ok = await login(email, password);
     if (ok) {
-      // If we came from a protected route, honor it; otherwise go home
-  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
-      const target = from && from !== '/login' ? from : '/';
+      // If we have an intendedPath (full path), prefer it, otherwise default to /me
+      const fromFull = intendedPath;
+      const fallback = '/me';
+      const target = fromFull && fromFull !== '/login' ? fromFull : fallback;
       navigate(target, { replace: true });
+      setIntendedPath(null);
       return;
     }
     setSubmitting(false);

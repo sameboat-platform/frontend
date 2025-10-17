@@ -83,7 +83,7 @@ Repository relocated: `ArchILLtect/sameboat-frontend` → `sameboat-platform/fro
 
 1. App mounts → `AuthProvider` runs guarded `refresh()` once (mitigates StrictMode double call).
 2. If `/api/me` returns user → state becomes `authenticated`.
-3. If 401 during bootstrap → treated as unauthenticated (no error yet); `bootstrapped` flips.
+3. If 401 during bootstrap → treated as unauthenticated (no error yet); `bootstrapped` flips. Note: the browser devtools may still show a red 401 line in the Console/Network panel—this is expected and not an application error; the client handles it silently.
 4. Post-bootstrap auth failures (e.g., session expiry) set mapped error and revert user to null.
 5. `ProtectedRoute` waits for `bootstrapped` then decides redirect vs rendering child.
 

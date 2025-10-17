@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../state/auth/useAuth';
 import { Center, Spinner } from '@chakra-ui/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -9,10 +10,18 @@ import { AnimatePresence, motion } from 'framer-motion';
  * Includes bootstrapped guard to avoid flash redirects before initial refresh finishes.
  */
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { user, status, bootstrapped, errorCode, errorMessage } = useAuth();
+  const { user, status, bootstrapped, errorCode, errorMessage, setIntendedPath } = useAuth();
   const loc = useLocation();
 
   const loading = status === "loading" || !bootstrapped;
+
+  // Record the full intended path for post-login redirect (avoid writing during render)
+  useEffect(() => {
+    if (!loading && !user) {
+      const full = `${loc.pathname}${loc.search || ''}${loc.hash || ''}`;
+      if (full !== '/login') setIntendedPath(full);
+    }
+  }, [loading, user, loc.pathname, loc.search, loc.hash, setIntendedPath]);
 
   return (
     <AnimatePresence mode="wait">

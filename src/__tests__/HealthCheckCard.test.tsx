@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import HealthCheckCard from '../components/HealthCheckCard';
 
 // Simple smoke test: component mounts, shows initial state, then transitions to OK after mock fetch
@@ -41,18 +42,21 @@ describe('HealthCheckCard', () => {
     // Use a long interval so background ticks don't interfere; trigger via Refresh
     render(<HealthCheckCard intervalMs={60000} minSkeletonMs={0} failureThreshold={3} />);
 
-    // Initial mount triggers first failure; click refresh twice for the next two
+    // Initial mount triggers first failure; then click refresh twice for the next two
     await screen.findByRole('alert'); // error alert present
     const refreshBtn = screen.getByRole('button', { name: /refresh now/i });
-    fireEvent.click(refreshBtn);
-    fireEvent.click(refreshBtn);
-
-    // CI timing can interleave clicks and network promises; ensure the 3rd call resolved
+    const user = userEvent.setup();
+    // Use async userEvent clicks and await fetch call count after each click
+    // to avoid CI timing flakes from delayed promises/timers.
+    await user.click(refreshBtn); // 2nd call
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
+    await user.click(refreshBtn); // 3rd call
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(3));
     await screen.findByTestId('health-paused');
 
     // Resume should trigger an immediate fetch and show healthy
-    fireEvent.click(screen.getByTestId('resume-btn'));
+    // (we don't assert call count here; instead assert the UI result for resilience)
+    await user.click(screen.getByTestId('resume-btn'));
     await waitFor(() => expect(screen.getByText(/Healthy/i)).toBeInTheDocument());
   });
 });

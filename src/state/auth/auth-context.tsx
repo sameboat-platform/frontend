@@ -1,8 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import type { AuthStore, AuthUser } from './types';
-import { api } from '../../lib/api';
+import type { AuthStore, AuthUser, AuthErrorCode } from './types';
 import { isBackendAuthErrorPayload, mapAuthError } from './errors';
+import { AUTH_IN_FLIGHT_ERROR } from "./constants";
+import { api } from '../../lib/api';
 import { emit } from '../../lib/events';
 
 // Endpoint paths (centralized so migrations are single-touch)
@@ -54,10 +55,12 @@ const isVitest = typeof process !== 'undefined' && Boolean((process as unknown a
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<AuthStore['status']>('idle');
-  const [errorCode, setErrorCode] = useState<string | undefined>();
+  const [errorCode, setErrorCode] = useState<AuthErrorCode | undefined>();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [lastFetched, setLastFetched] = useState<number | undefined>();
   const [bootstrapped, setBootstrapped] = useState(false);
+  const [intendedPath, _setIntendedPath] = useState<string | null>(null);
+  const [inFlight, setInFlight] = useState<boolean>(false);
 
   const bootstrappedRef = useRef(false);
   const mountedRef = useRef(false);
@@ -67,13 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => { mountedRef.current = false; };
   }, []);
 
-  // Removed previous heartbeat interval that logged every second until bootstrap; fail-safe timeout below remains sufficient.
-
   // Normalize & record error state
   const recordError = useCallback((code: string | undefined, fallback?: string) => {
     const mapped = mapAuthError(code, fallback);
     if (!mountedRef.current) return;
-    setErrorCode(mapped.code);
+  setErrorCode(mapped.code);
     setErrorMessage(mapped.message);
     setStatus('error');
   }, []);
@@ -86,12 +87,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (status === 'error') setStatus(user ? 'authenticated' : 'idle');
   }, [status, user]);
 
+  // Public setter for intended path (preserve query + hash)
+  const setIntendedPath = useCallback((p: string | null) => {
+    _setIntendedPath(p);
+  }, []);
+
+  // Simple guard to avoid overlapping auth actions
+  const withInFlight = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
+    if (inFlight) {
+      return Promise.reject(new Error(AUTH_IN_FLIGHT_ERROR)) as Promise<T>;
+    }
+    setInFlight(true);
+    try {
+      return await fn();
+    } finally {
+      setInFlight(false);
+    }
+  }, [inFlight]);
+
   // Refresh user state from /me endpoint
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async () => withInFlight(async () => {
     const controller = new AbortController();
     let data: unknown | undefined;
     let hadError = false;
-  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() begin', { ME_PATH });
+    if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() begin', { ME_PATH });
     setStatus(prev => (prev === 'idle' ? 'loading' : prev));
     try {
       data = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include', signal: controller.signal });
@@ -109,12 +128,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           if (mountedRef.current) {
             setUser(null);
-            recordError('UNAUTHORIZED');
+            recordError('UNKNOWN', 'You are not authorized. Please sign in.');
           }
           if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() error after bootstrap', e);
         }
       } else {
-  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() aborted');
+        if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() aborted');
       }
     }
     if (!hadError && mountedRef.current) {
@@ -125,23 +144,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLastFetched(Date.now());
         clearError();
         emit('auth:refresh', { user: u });
-  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() success (user)');
+        if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() success (user)');
       } else {
         setUser(null);
         setStatus('idle');
-  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() success (no user)');
+        if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() success (no user)');
       }
     }
     bootstrappedRef.current = true;
     if (mountedRef.current) setBootstrapped(true);
-  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() end: bootstrapped = true');
-  }, [clearError, recordError]);
+    if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() end: bootstrapped = true');
+  }).catch((err) => {
+    if (import.meta.env.DEV && !isVitest) {
+      console.error('[auth] refresh() error:', err);
+    }
+    return undefined;
+  }), [clearError, recordError, withInFlight]);
 
   // Login action
-  const login = useCallback<AuthStore['login']>(async (email, password) => {
+  const login = useCallback<AuthStore['login']>(async (email, password) => withInFlight(async () => {
     const controller = new AbortController();
     setStatus('loading');
-  if (import.meta.env.DEV && !isVitest) console.debug("[auth] Attempting login...");
+    if (import.meta.env.DEV && !isVitest) console.debug("[auth] Attempting login...");
     clearError();
     let success = false;
     try {
@@ -151,9 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include',
         signal: controller.signal
       });
-      console.log(mountedRef.current);
       const u = extractRawUser(res);
-      console.log(u);
       if (u) {
         if (mountedRef.current) {
           setUser(u);
@@ -179,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       success = false;
     }
     return success;
-  }, [clearError, recordError, refresh]);
+  }).catch(() => false), [clearError, recordError, refresh, withInFlight]);
 
   // Register action
   const register = useCallback<AuthStore['register']>(async (email, password) => {
@@ -215,15 +237,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             code = (e as { cause?: { error?: string } }).cause?.error;
           }
         }
-        if (mountedRef.current) recordError(code || 'UNKNOWN_ERROR', fallback);
+        if (mountedRef.current) recordError(code || 'UNKNOWN', fallback);
       }
       success = false;
     }
     return success;
-   }, [clearError, recordError, refresh]);
+  }, [clearError, recordError, refresh]);
 
   // Logout action
-  const logout = useCallback<AuthStore['logout']>(async () => {
+  const logout = useCallback<AuthStore['logout']>(async () => withInFlight(async () => {
     const controller = new AbortController();
     setStatus('loading');
     clearError();
@@ -236,33 +258,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setStatus('idle');
         setLastFetched(undefined);
+        _setIntendedPath(null);
       }
       emit('auth:logout');
     }
-  }, [clearError]);
+  }).catch(() => undefined), [clearError, withInFlight]);
 
   // Bootstrap exactly once on mount
   useEffect(() => {
     if (!didInitialBootstrapAttempt) {
       didInitialBootstrapAttempt = true;
-  if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_BOOTSTRAP && !isVitest) console.debug('[auth] initial bootstrap refresh()');
+      if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_BOOTSTRAP && !isVitest) console.debug('[auth] initial bootstrap refresh()');
       refresh();
-  } else if (import.meta.env.DEV && !isVitest) {
+    } else if (import.meta.env.DEV && !isVitest) {
       console.debug('[auth] skipped duplicate bootstrap refresh (StrictMode remount)');
     }
     // Safety fallback: ensure bootstrapped flips after 5s even if refresh hangs
     const failSafe = setTimeout(() => {
-  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() timeout fail-safe triggered');
+      if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() timeout fail-safe triggered');
       if (!bootstrappedRef.current && mountedRef.current) {
         bootstrappedRef.current = true;
         setBootstrapped(true);
         setStatus(prev => (prev === 'loading' ? 'idle' : prev));
-  if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() timeout fail-safe triggered');
+        if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() timeout fail-safe triggered');
       }
     }, 5000);
     return () => clearTimeout(failSafe);
   }, [refresh]);
-
+  
   // Memoize context value to avoid unnecessary rerenders
   const value: AuthStore = useMemo(() => ({
     user,
@@ -271,12 +294,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     errorMessage,
     lastFetched,
     bootstrapped,
+    intendedPath,
+    inFlight,
     login,
     register,
     refresh,
     logout,
     clearError,
-  }), [user, status, errorCode, errorMessage, lastFetched, bootstrapped, login, register, refresh, logout, clearError]);
+    setIntendedPath,
+  }), [user, status, errorCode, errorMessage, lastFetched, bootstrapped, intendedPath, inFlight, login, register, refresh, logout, clearError, setIntendedPath]);
 
   // Expose for deep debugging (dev only). Allows manual inspection: window.__AUTH__
   if (import.meta.env.DEV && typeof window !== 'undefined') {
