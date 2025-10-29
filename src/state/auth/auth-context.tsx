@@ -5,6 +5,7 @@ import { isBackendAuthErrorPayload, mapAuthError } from './errors';
 import { AUTH_IN_FLIGHT_ERROR } from "./constants";
 import { api } from '../../lib/api';
 import { emit } from '../../lib/events';
+import { shouldRefreshOnVisibility } from './visibility';
 
 // Endpoint paths (centralized so migrations are single-touch)
 // Canonical: use '/api/me' for the authenticated user endpoint.
@@ -45,6 +46,8 @@ const AuthContext = createContext<AuthStore | null>(null);
 let didInitialBootstrapAttempt = false;
 // Vitest exposes VITEST env var; we detect it without using `any` casts
 const isVitest = typeof process !== 'undefined' && Boolean((process as unknown as { env?: Record<string, unknown> }).env?.VITEST);
+const DEBUG_AUTH = import.meta.env.DEV && import.meta.env.VITE_DEBUG_AUTH === 'true' && !isVitest;
+const DEBUG_AUTH_BOOTSTRAP = import.meta.env.DEV && import.meta.env.VITE_DEBUG_AUTH_BOOTSTRAP === 'true' && !isVitest;
 
 /**
  * AuthProvider component to provide authentication context.
@@ -61,10 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [bootstrapped, setBootstrapped] = useState(false);
   const [intendedPath, _setIntendedPath] = useState<string | null>(null);
   const [inFlight, setInFlight] = useState<boolean>(false);
+  const inFlightRef = useRef(inFlight);
+  const lastFetchedRef = useRef<number | undefined>(undefined);
+  useEffect(() => { inFlightRef.current = inFlight; }, [inFlight]);
+  useEffect(() => { lastFetchedRef.current = lastFetched; }, [lastFetched]);
 
   const bootstrappedRef = useRef(false);
   const mountedRef = useRef(false);
-  if (import.meta.env.DEV && !isVitest) console.debug('[auth] mounted', { mountedRef: mountedRef.current });
+  if (DEBUG_AUTH) console.debug('[auth] mounted', { mountedRef: mountedRef.current });
   useEffect(() => {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
@@ -110,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const controller = new AbortController();
     let data: unknown | undefined;
     let hadError = false;
-    if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() begin', { ME_PATH });
+  if (DEBUG_AUTH) console.debug('[auth] refresh() begin', { ME_PATH });
     setStatus(prev => (prev === 'idle' ? 'loading' : prev));
     try {
       data = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include', signal: controller.signal });
@@ -119,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) {
         // treat as unauthenticated on first run, error thereafter
         if (!bootstrappedRef.current) {
-          if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() unauthenticated (expected first run)');
+          if (DEBUG_AUTH) console.debug('[auth] refresh() unauthenticated (expected first run)');
           if (mountedRef.current) {
             setUser(null);
             setStatus('idle');
@@ -130,10 +137,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             recordError('UNKNOWN', 'You are not authorized. Please sign in.');
           }
-          if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() error after bootstrap', e);
+          if (DEBUG_AUTH) console.debug('[auth] refresh() error after bootstrap', e);
         }
       } else {
-        if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() aborted');
+  if (DEBUG_AUTH) console.debug('[auth] refresh() aborted');
       }
     }
     if (!hadError && mountedRef.current) {
@@ -144,20 +151,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLastFetched(Date.now());
         clearError();
         emit('auth:refresh', { user: u });
-        if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() success (user)');
+  if (DEBUG_AUTH) console.debug('[auth] refresh() success (user)');
       } else {
         setUser(null);
         setStatus('idle');
-        if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() success (no user)');
+  if (DEBUG_AUTH) console.debug('[auth] refresh() success (no user)');
       }
     }
     bootstrappedRef.current = true;
     if (mountedRef.current) setBootstrapped(true);
-    if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() end: bootstrapped = true');
+    if (DEBUG_AUTH) console.debug('[auth] refresh() end: bootstrapped = true');
   }).catch((err) => {
-    if (import.meta.env.DEV && !isVitest) {
-      console.error('[auth] refresh() error:', err);
-    }
+    if (DEBUG_AUTH) console.error('[auth] refresh() error:', err);
     return undefined;
   }), [clearError, recordError, withInFlight]);
 
@@ -165,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback<AuthStore['login']>(async (email, password) => withInFlight(async () => {
     const controller = new AbortController();
     setStatus('loading');
-    if (import.meta.env.DEV && !isVitest) console.debug("[auth] Attempting login...");
+  if (DEBUG_AUTH) console.debug("[auth] Attempting login...");
     clearError();
     let success = false;
     try {
@@ -268,22 +273,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!didInitialBootstrapAttempt) {
       didInitialBootstrapAttempt = true;
-      if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_BOOTSTRAP && !isVitest) console.debug('[auth] initial bootstrap refresh()');
+      if (DEBUG_AUTH_BOOTSTRAP) console.debug('[auth] initial bootstrap refresh()');
       refresh();
-    } else if (import.meta.env.DEV && !isVitest) {
+    } else if (DEBUG_AUTH) {
       console.debug('[auth] skipped duplicate bootstrap refresh (StrictMode remount)');
     }
     // Safety fallback: ensure bootstrapped flips after 5s even if refresh hangs
     const failSafe = setTimeout(() => {
-      if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() timeout fail-safe triggered');
+      if (DEBUG_AUTH) console.debug('[auth] refresh() timeout fail-safe triggered');
       if (!bootstrappedRef.current && mountedRef.current) {
         bootstrappedRef.current = true;
         setBootstrapped(true);
         setStatus(prev => (prev === 'loading' ? 'idle' : prev));
-        if (import.meta.env.DEV && !isVitest) console.debug('[auth] refresh() timeout fail-safe triggered');
+        if (DEBUG_AUTH) console.debug('[auth] refresh() timeout fail-safe triggered');
       }
     }, 5000);
     return () => clearTimeout(failSafe);
+  }, [refresh]);
+
+  // Visibility-based refresh with 30s cooldown
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onVisibility = () => {
+      try {
+        const visible = document.visibilityState === 'visible';
+        const ok = isVitest
+          ? visible // in tests, just require visibility
+          : shouldRefreshOnVisibility({
+              visible,
+              inFlight: inFlightRef.current,
+              lastFetched: lastFetchedRef.current,
+              now: Date.now(),
+              cooldownMs: 30_000,
+            });
+        if (ok) refresh();
+      } catch {
+        /* noop */
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
   }, [refresh]);
   
   // Memoize context value to avoid unnecessary rerenders
