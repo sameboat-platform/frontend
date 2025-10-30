@@ -5,17 +5,16 @@
 
 ---
 
-## Architecture/Files to Touch
+## Architecture/Files Touched (Implemented)
 
-- `src/lib/api.ts` – fetch/axios wrapper (must send cookies)
-- `src/store/auth.ts` – Zustand global auth store
-- `src/components/Navbar.tsx` – conditional links (Login / Logout / Profile)
-- `src/routes/ProtectedRoute.tsx` – auth guard (no “flash”)
-- `src/pages/Login.tsx` – login form (POST), error mapping, redirect to `returnTo`
-- `src/pages/Me.tsx` – signed-in state display (basic)
-- `src/App.tsx` (or `src/main.tsx`) – **single bootstrap** of session on mount
-- `src/env.d.ts` / `.env.example` – ensure `VITE_API_BASE_URL`
-- `__tests__/auth/*.test.tsx` – routing + auth tests (Vitest + RTL)
+- `src/lib/api.ts` – fetch wrapper with `credentials: 'include'`, debug gated by `VITE_DEBUG_AUTH='true'`.
+- `src/state/auth/auth-context.tsx` – React Context auth store with: intendedPath, inFlight concurrency guard, error mapping, one-time bootstrap, and visibility-based refresh with 30s cooldown.
+- `src/routes/ProtectedRoute.tsx` – auth guard (stores full intended path; no content flash after bootstrap).
+- `src/pages/Login.tsx` – login form, error mapping, redirect to intended path.
+- `src/pages/Me.tsx` – minimal signed-in state display.
+- `src/components/HealthCheckCard.tsx` – stable polling and tests (Actuator).
+- `.env.example`/README – documented flags (see Env below).
+- `src/__tests__/*` – added targeted tests to keep coverage stable.
 
 > **Env expectation:**  
 > `VITE_API_BASE_URL=https://<render-api-domain>` (Netlify build env)  
@@ -37,120 +36,61 @@
 
 ---
 
-## Implementation Plan (ordered)
+## Implementation Summary (delivered)
 
-### 1) HTTP client with cookies
-- [ ] Create or update `src/lib/api.ts` to send `credentials: 'include'`
+1) HTTP client with cookies
+- [x] `src/lib/api.ts` ensures `credentials: 'include'`; debug logs only when `VITE_DEBUG_AUTH='true'`.
 
-### 2) Zustand auth store
-- [ ] Implement store with `user`, `loading`, `error`, `intendedPath`, and actions for `login`, `logout`, `checkSession`, and `setIntendedPath`.
+2) Auth store (React Context for MVP)
+- [x] `src/state/auth/auth-context.tsx` with `user`, `status`, `error`, `intendedPath`, `inFlight`, and actions `login`, `logout`, `refresh`, `register`, `setIntendedPath`.
+- [x] Concurrency guard to prevent overlapping auth requests.
+- [x] Error mapping normalized and tested; friendly messages aligned.
 
-```ts
-import { create } from 'zustand';
+3) Session bootstrap (StrictMode-safe)
+- [x] One bootstrap attempt per page load via module-level flag; 401 on first run is expected and silent.
+- [x] Fail-safe timer ensures `bootstrapped=true` even if network hangs.
 
-type User = { id: string; email: string; name?: string };
-type State = {
-  user: User | null;
-  loading: boolean;
-  error?: string | null;
-  intendedPath?: string | null; // for redirect preservation
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  checkSession: () => Promise<void>;
-  setIntendedPath: (p: string | null) => void;
-};
+4) ProtectedRoute (no “flash”)
+- [x] Stores full intended path (pathname+search+hash); doesn’t set intended for `/login`.
 
-export const useAuth = create<State>((set, get) => ({
-  user: null,
-  loading: false,
-  error: null,
-  intendedPath: null,
+5) Login page
+- [x] Validates, performs login, redirects back to intended path; clears intended post-login.
 
-  async checkSession() {
-    set({ loading: true, error: null });
-    try {
-      const me = await api<User>('/api/me');
-      set({ user: me, loading: false });
-    } catch (e: any) {
-      // 401 → no session; do not surface error toast on bootstrap
-      set({ user: null, loading: false });
-    }
-  },
+6) Console hygiene
+- [x] Gate auth/API logs behind `VITE_DEBUG_AUTH='true'` and `VITE_DEBUG_AUTH_BOOTSTRAP='true'`.
+- [x] Added a console hygiene test to ensure no warn/error during happy bootstrap.
 
-  async login(email, password) {
-    set({ loading: true, error: null });
-    try {
-      await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-      const me = await api<User>('/api/me'); // get fresh identity
-      set({ user: me, loading: false, error: null });
-    } catch (e: any) {
-      set({ error: mapAuthError(e), loading: false });
-      throw e;
-    }
-  },
+7) Session freshness on tab visibility
+- [x] `visibilitychange` listener triggers `refresh()` when visible, not in-flight, and last fetch ≥ 30s ago (pure helper `shouldRefreshOnVisibility`).
+- [x] Unit-tested the cooldown logic in isolation to keep tests deterministic.
 
-  async logout() {
-    set({ loading: true, error: null });
-    try {
-      await api('/api/auth/logout', { method: 'POST' }); // expect 204/200
-    } finally {
-      set({ user: null, loading: false });
-    }
-  },
-
-  setIntendedPath(p) { set({ intendedPath: p }); },
-}));
-```
-
-- `mapAuthError(e)` returns friendly strings for 401, network, etc.
-
-### 3) Session bootstrap (StrictMode-safe) [**ONLY IF THIS MAKES SENSE**]
-- [ ] Call `checkSession()` once on mount in `App.tsx` or root component.
-
-```ts
-const { checkSession } = useAuth();
-useEffect(() => { checkSession(); }, [checkSession]);
-```
-
-- Ensure it runs once per page load (guard against duplicate calls if StrictMode double-mount is in play—store can debounce with an internal flag if needed).
-
-### 4) ProtectedRoute (no “flash”)
-- [ ] Gate routes based on `user` and `loading` states; preserve `intendedPath`.
-
-### 5) Login page
-- [ ] Add form validation; handle redirects and friendly Inline form error summary using auth.error mapping.
-
-### 6) Navbar conditional UI
-- [ ] Display `Login` or `Logout`/`Me` based on auth state; wire logout handler.
-
-### 7) Session freshness on tab visibility
-- [ ] Throttled `visibilitychange` listener to call `checkSession()` when tab regains focus.
-
-### 8) Error handling UX
-- [ ] Gracefully handle expired sessions and global 401s; avoid repeated toasts.
+8) Error handling UX
+- [x] Post-bootstrap 401s surface a mapped auth error; initial bootstrap 401 is silent.
 
 ---
 
 ## Tests (Vitest + React Testing Library)
 
-- [ ] `bootstrap-restores-session.spec.tsx` – `/api/me` → authenticated state persists
-- [ ] `protected-route-redirects-guest.spec.tsx` – guest redirect + intendedPath
-- [ ] `login-success-redirects-intended.spec.tsx` – login redirect back to intended route
-- [ ] `login-failure-maps-error.spec.tsx` – maps BAD_CREDENTIALS
-- [ ] `logout-clears-session.spec.tsx` – clears UI + state
-- [ ] `visibility-refresh.spec.tsx` – triggers refresh on tab regain
+- [x] `AuthBootstrap.test.tsx` – bootstrap happy path.
+- [x] `ProtectedRoute.test.tsx` – redirects guest to `/login`.
+- [x] `IntendedPath.test.tsx` – preserves full path (pathname+search+hash) on post-login redirect.
+- [x] `AuthFlow.test.tsx` – basic form interactions and validation.
+- [x] `LogoutRace.test.tsx` – ensure no re-auth flip after logout.
+- [x] `VisibilityRefresh.test.tsx` – unit tests for cooldown logic helper.
+- [x] `errors.test.ts` – error mapping/normalization.
+- [x] `ConsoleHygiene.test.tsx` – no warn/error on happy bootstrap.
 
 ---
 
 ## Acceptance Criteria (frontend)
 
-- [ ] `/api/me` check on load restores session.
-- [ ] Protected routes redirect guests, preserve path, and avoid content flash.
-- [ ] Login sets cookie, updates UI, redirects correctly, and maps errors.
-- [ ] Logout clears client + server session.
-- [ ] Tab visibility regain refreshes session (throttled).
-- [ ] Tests pass in CI and block failing PRs.
-- [ ] `.env.example` and README updated accordingly.
+- [x] `/api/me` check on load restores session (unauthenticated shows expected 401, handled silently).
+- [x] Protected routes redirect guests, preserve path, and avoid content flash.
+- [x] Login sets cookie, updates UI, redirects correctly, and maps errors.
+- [x] Logout clears client + server session.
+- [x] Tab visibility regain refreshes session (throttled by cooldown helper).
+- [x] Tests pass in CI and block failing PRs.
+- [x] `.env.example` and README updated with flags and canonical endpoints.
 
 ---
 
@@ -158,6 +98,21 @@ useEffect(() => { checkSession(); }, [checkSession]);
 
 - Missing `credentials: 'include'` → cookies won’t persist.
 - Cross-site cookies → backend must set `Secure` + `SameSite=None`.
-- StrictMode double mount → debounce or guard bootstrap.
-- Race conditions → don’t overlap `checkSession()` with `login()`/`logout()`.
+- StrictMode double mount → module-level bootstrap guard prevents duplicate refresh.
+- Race conditions → in-flight guard prevents overlapping `refresh/login/logout`.
 - Error spam → suppress 401 toasts during initial bootstrap.
+
+---
+
+## Post‑MVP
+
+- Add an end-to-end integration test for the actual visibility event + 30s cooldown flow using a real browser runner (e.g., Playwright). The browser environment provides a faithful visibility lifecycle and reliable time control, making this scenario deterministic.
+
+## Looking ahead: Zustand migration RFC
+
+- The MVP uses a React Context store with a stable `useAuth`-style API. The RFC will propose swapping internals to Zustand while keeping the hook API stable for consumers, covering:
+  - Store shape parity: `user`, `status`, `error`, `intendedPath`, `inFlight`, and actions.
+  - Migration plan: introduce `useAuth` thin wrapper over Zustand selector; provide codemod/guide if needed.
+  - Concurrency and bootstrap semantics: preserve with an action queue or middleware in Zustand.
+  - Testing strategy: keep tests green by reusing the same public API; add a few store-specific tests.
+  - Rollout: draft PR behind a feature branch; no behavioral change expected.
