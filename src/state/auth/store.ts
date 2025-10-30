@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AuthStore, AuthUser } from './types';
+import type { AuthStore } from './types';
 import { isBackendAuthErrorPayload, mapAuthError } from './errors';
 import { AUTH_IN_FLIGHT_ERROR } from './constants';
 import { api } from '../../lib/api';
@@ -143,7 +143,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const res = await api<unknown>(REGISTER_PATH, { method: 'POST', body: JSON.stringify({ email, password }), credentials: 'include' });
       const u = extractRawUser(res);
       if (u) {
-        set({ user: u as AuthUser, status: 'authenticated', lastFetched: Date.now() });
+        set({ user: u, status: 'authenticated', lastFetched: Date.now() });
         return true;
       }
       await get().refresh();
