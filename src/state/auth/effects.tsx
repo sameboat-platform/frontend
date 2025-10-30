@@ -2,7 +2,15 @@ import { useEffect, useRef } from 'react';
 import { useAuthStore } from './store';
 import { shouldRefreshOnVisibility } from './visibility';
 
-// Track initial bootstrap across StrictMode remounts
+/**
+ * Module-level flag to ensure we only attempt initial bootstrap once,
+ * even if React StrictMode remounts this component multiple times.
+ * StrictMode intentionally double-mounts components to help detect side effects,
+ * which can cause duplicate calls to refresh() if not guarded.
+ * This flag is safe because AuthEffects is only ever mounted once per SPA session,
+ * and we do not rely on SSR or concurrent rendering for this effect.
+ * See original rationale in auth-context.tsx for details.
+ */
 let didInitialBootstrapAttempt = false;
 
 export function AuthEffects() {
