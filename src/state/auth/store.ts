@@ -86,7 +86,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   clearError() {
     const { user, status } = get();
-    set({ errorCode: undefined, errorMessage: undefined, status: status === 'error' ? (user ? 'authenticated' : 'idle') : status });
+    let newStatus = status;
+    if (status === 'error') {
+      newStatus = user ? 'authenticated' : 'idle';
+    }
+    set({ errorCode: undefined, errorMessage: undefined, status: newStatus });
   },
 
   async refresh() {
