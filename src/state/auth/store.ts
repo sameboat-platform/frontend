@@ -54,7 +54,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   async refresh() {
     // simple guard to avoid overlaps
     if (get().inFlight) throw new Error(AUTH_IN_FLIGHT_ERROR);
-  set((s) => ({ inFlight: true, status: s.status === 'idle' ? 'loading' : s.status }));
+    set((s) => ({ inFlight: true, status: s.status === 'idle' ? 'loading' : s.status }));
     try {
       const data = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include' });
       const u = extractRawUser(data);
