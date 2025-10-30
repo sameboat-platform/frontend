@@ -6,15 +6,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.3.0] - 2025-10-29
+
 ### Added
 - CI: Dependency Audit workflow (`dependency-audit.yml`) runs `npm audit` on runtime dependencies; fails on High/Critical, summarizes results in PR/job summary.
 - Security docs: dependency audit policy and fallbacks (`docs/security/dependency-audit.md`).
 - Bundle analysis script (`npm run analyze`) that builds in analyze mode, generates a bundle report, saves it to `dist/bundle-stats.html`, and auto-opens it.
 - Dev-time env guard: lightweight checks warn on malformed `VITE_API_BASE_URL`, invalid `VITE_HEALTH_REFRESH_MS` (< 1000), or non-URL `VITE_FEEDBACK_URL`.
+- Auth: visibility-based session refresh on tab focus with a 30s cooldown (pure helper `shouldRefreshOnVisibility` + unit tests).
+- Auth: preserve full `intendedPath` (pathname + search + hash) through login flow and redirect post-login.
 
 ### Changed
 - Release script hardening: refuse to run unless on `main` (require‑main guard) to prevent accidental releases from feature branches.
 - Health endpoint alignment: frontend now calls `/actuator/health` (no `/api` prefix); dev panel probes updated accordingly.
+- Auth: migrated context store to Zustand with `AuthEffects` handling bootstrap and visibility listeners; preserved public `useAuth` API and kept `AuthProvider` as a thin wrapper. One-time bootstrap with a 5s fail‑safe (StrictMode‑safe).
+- Logging: standardized debug flags to `VITE_DEBUG_AUTH` and `VITE_DEBUG_AUTH_BOOTSTRAP`, gating verbose logs and reducing console noise (especially under test).
 
 ### Housekeeping
 - `.env.example` tidied (duplicate keys removed; clearer comments).
@@ -29,6 +37,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - PR template now includes a "Post‑merge actions" checklist (required checks, tag push, milestone closure).
 - README and Architecture updated to describe dependency audit policy and release guard.
 - README documents a soft performance budget (initial JS ≤ 250 kB gzip) and bundle analysis workflow.
+- RFC added: `docs/rfcs/zustand-auth-store.md` (goals, design, migration plan, acceptance criteria).
+- Week 4 plan updated; `TTD.md` notes a post‑MVP E2E test for visibility + cooldown.
+
+### Internal
+- API client: ensured `credentials: 'include'` and streamlined debug logging; minor event emission tidy‑ups.
+- Tests: added intendedPath redirect test, logout race test, error mapping tests, and console hygiene test; replaced a brittle visibility integration test with deterministic unit tests for the cooldown helper.
 
 ## [0.2.0] - 2025-10-04
 ### Added
@@ -134,6 +148,7 @@ Guidelines:
 -   Start new entries under [Unreleased]; move them into a dated version section when cutting a release (and optionally tagging in git).
 -   Group changes under: Added / Changed / Fixed / Removed / Deprecated / Security / Docs / Internal as needed.
 
-[Unreleased]: https://github.com/sameboat-platform/frontend/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/sameboat-platform/frontend/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/sameboat-platform/frontend/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/sameboat-platform/frontend/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/sameboat-platform/frontend/tree/v0.1.0
