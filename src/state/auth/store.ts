@@ -116,7 +116,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const res = await api<unknown>(LOGIN_PATH, { method: 'POST', body: JSON.stringify({ email, password }), credentials: 'include' });
       const u = extractRawUser(res);
       if (u) {
-        set({ user: u as AuthUser, status: 'authenticated', lastFetched: Date.now() });
+        set({ user: u, status: 'authenticated', lastFetched: Date.now() });
         emit('auth:login', { user: u });
         return true;
       }
