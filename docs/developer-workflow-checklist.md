@@ -145,7 +145,7 @@ Trigger this AFTER the PR containing the final set of changes for the release ha
 | Forgetting changelog             | CI changelog check fails | Add bullet under `[Unreleased]`                                        |
 | Intermittent test failure        | Flaky timing waits       | Replace `setTimeout` with deterministic mock / use `waitFor` correctly |
 | Unused imports / types           | Lint errors              | Remove or use                                                          |
-| Accidental double bootstrap logs | Extra refresh calls      | Confirm module-level guard intact in auth context                      |
+| Accidental double bootstrap logs | Extra refresh calls      | Confirm module-level guard intact in AuthEffects (Zustand auth store)  |
 
 ---
 

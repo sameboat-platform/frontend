@@ -1,6 +1,6 @@
 ## Copilot instructions for SameBoat Frontend
 
-Project: Vite + React 19 + TypeScript (strict), using SWC React plugin.
+Project: Vite + React 19 + TypeScript (strict), using SWC React plugin. Auth state uses a Zustand store with a stable `useAuth` adapter and `AuthEffects` for bootstrap + visibility refresh.
 
 Big picture
 
@@ -24,13 +24,15 @@ Architecture and conventions
 -   Assets: Static assets in `public/` served at root (`/vite.svg`) and module-imported assets in `src/assets/`.
 -   TypeScript: Strict config (`strict`, `noUnused*`, `noFallthroughCasesInSwitch`, `noUncheckedSideEffectImports`). No emit from TS; Vite handles bundling.
 -   Imports/exports: ESM only. With `verbatimModuleSyntax`, avoid mixing default/named incorrectly; use `import type` for type-only.
+-   State/auth: `src/state/auth/store.ts` (Zustand), `useAuth` adapter, `AuthEffects` for one-time bootstrap and 30s visibility-driven refresh. `AuthProvider` is a thin wrapper that mounts effects.
 
 What to edit where
 
--   App shell/Routes: `src/App.tsx` (current MVP placeholder). Create new components under `src/` (e.g., `src/components/Foo.tsx`) and import into `App.tsx`.
+-   App shell/Routes: `src/App.tsx`. Create new components under `src/` (e.g., `src/components/Foo.tsx`) and import into `App.tsx`.
 -   Global styles: `src/index.css`; component styles: local `.css` imports next to components.
 -   Vite config/plugins: `vite.config.ts` (currently only `@vitejs/plugin-react-swc`).
 -   Lint rules: `eslint.config.js` (flat config; only targets `**/*.{ts,tsx}` today).
+ -  Auth: prefer importing `useAuth` from `src/state/auth/useAuth` and avoid reading implementation details directly; effects are mounted once by `AuthProvider`.
 
 Examples
 
@@ -45,12 +47,14 @@ Gotchas
 -   TS build runs before bundling: fix type errors to pass `npm run build` and CI.
 -   Node version: CI uses Node 20. Use the same locally to avoid lockfile or API differences.
 -   Lint scope: only TS/TSX files are linted; JS files (none currently) won’t be checked by default.
+ -  React Hooks rules: avoid calling hooks conditionally; in dev-only components, return early before any hooks when `isProd()`.
 
 Pointers to key files
 
 -   `src/main.tsx`, `src/App.tsx`, `src/App.css`, `src/index.css`
 -   `package.json` (scripts), `vite.config.ts`, `tsconfig.*.json`, `eslint.config.js`
 -   `.github/workflows/frontend-ci.yml` (build pipeline)
+ -  `src/state/auth/store.ts`, `src/state/auth/useAuth.ts`, `src/state/auth/auth-context.tsx`, `src/state/auth/effects.tsx`
 
 Migration context
 
@@ -61,3 +65,4 @@ Further docs
 -   `README.md` – high-level overview & workflows.
 -   `CONTRIBUTING.md` – contribution process & quality gates.
 -   `docs/architecture.md` – current architecture + extension points.
+-   `docs/rfcs/zustand-auth-store.md` – migration rationale and design.
