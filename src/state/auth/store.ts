@@ -11,11 +11,6 @@ const REGISTER_PATH = '/api/auth/register';
 const ME_PATH = '/api/me';
 const LOGOUT_PATH = '/api/auth/logout';
 
-interface RawUser { id: string; email: string; roles?: string[]; displayName?: string | null }
-function isRawUser(v: unknown): v is RawUser {
-  return !!v && typeof v === 'object' && 'id' in v && 'email' in v;
-}
-
 type RawUser = {
   id: string;
   email: string;
@@ -59,15 +54,6 @@ function extractRawUser(v: unknown): RawUser | undefined {
   if (v && typeof v === 'object' && 'user' in (v as Record<string, unknown>)) {
     const inner = (v as Record<string, unknown>).user as unknown;
     if (isRawUser(inner)) return normalizeUser(inner);
-  }
-  return undefined;
-}
-
-function extractRawUser(v: unknown): RawUser | undefined {
-  if (isRawUser(v)) return normalizeUser(v as any);
-  if (v && typeof v === 'object' && 'user' in (v as Record<string, unknown>)) {
-    const inner = (v as Record<string, unknown>).user as unknown;
-    if (isRawUser(inner)) return normalizeUser(inner as any);
   }
   return undefined;
 }
