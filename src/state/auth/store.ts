@@ -85,7 +85,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const data = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include' });
       const u = extractRawUser(data);
       if (u) {
-        set({ user: u as AuthUser, status: 'authenticated', lastFetched: Date.now(), errorCode: undefined, errorMessage: undefined });
+        set({ user: u, status: 'authenticated', lastFetched: Date.now(), errorCode: undefined, errorMessage: undefined });
         emit('auth:refresh', { user: u });
       } else {
         set({ user: null, status: 'idle' });
