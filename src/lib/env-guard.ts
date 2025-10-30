@@ -16,7 +16,6 @@ export function runEnvGuard(): void {
   const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '';
   if (apiBase) {
     if (!isHttpUrl(apiBase)) {
-      // eslint-disable-next-line no-console
       console.warn('[env] VITE_API_BASE_URL is set but not a valid http(s) URL:', apiBase);
     }
   }
@@ -25,14 +24,12 @@ export function runEnvGuard(): void {
   if (refreshRaw) {
     const n = parseInt(refreshRaw, 10);
     if (!Number.isFinite(n) || n <= 1000) {
-      // eslint-disable-next-line no-console
       console.warn('[env] VITE_HEALTH_REFRESH_MS should be > 1000 (ms). Current:', refreshRaw);
     }
   }
 
   const feedback = import.meta.env.VITE_FEEDBACK_URL as string | undefined;
   if (feedback && !isHttpUrl(feedback)) {
-    // eslint-disable-next-line no-console
     console.warn('[env] VITE_FEEDBACK_URL should be an http(s) URL. Current:', feedback);
   }
 }
