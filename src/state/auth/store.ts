@@ -58,6 +58,18 @@ function extractRawUser(v: unknown): RawUser | undefined {
   return undefined;
 }
 
+type BackendAuthError = Error & { cause?: { error: string } };
+
+function getAuthErrorCode(e: unknown): string | undefined {
+  if (e && typeof e === 'object') {
+    const err = e as Partial<BackendAuthError>;
+    if (err.cause && isBackendAuthErrorPayload(err.cause)) {
+      return err.cause.error;
+    }
+  }
+  return undefined;
+}
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
   // state
   user: null,
@@ -96,10 +108,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (!bootstrapped) {
         set({ user: null, status: 'idle', errorCode: undefined, errorMessage: undefined });
       } else {
-        let code: string | undefined; let fallback: string | undefined;
+        let code: string | undefined
+        let fallback: string | undefined;
         if (e && typeof e === 'object') {
           if ('message' in e) fallback = String((e as { message?: unknown }).message);
-          if ('cause' in e && isBackendAuthErrorPayload((e as { cause?: unknown }).cause)) code = (e as any).cause?.error;
+          code = getAuthErrorCode(e);
         }
         const mapped = mapAuthError(code, fallback);
         set({ user: null, status: 'error', errorCode: mapped.code, errorMessage: mapped.message });
@@ -123,10 +136,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await get().refresh();
       return true;
     } catch (e) {
-      let code: string | undefined; let fallback: string | undefined;
+      let code: string | undefined
+      let fallback: string | undefined;
       if (e && typeof e === 'object') {
         if ('message' in e) fallback = String((e as { message?: unknown }).message);
-        if ('cause' in e && isBackendAuthErrorPayload((e as { cause?: unknown }).cause)) code = (e as any).cause?.error;
+        code = getAuthErrorCode(e);
       }
       const mapped = mapAuthError(code || 'BAD_CREDENTIALS', fallback);
       set({ status: 'error', errorCode: mapped.code, errorMessage: mapped.message });
@@ -149,10 +163,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await get().refresh();
       return true;
     } catch (e) {
-      let code: string | undefined; let fallback: string | undefined;
+      let code: string | undefined
+      let fallback: string | undefined;
       if (e && typeof e === 'object') {
         if ('message' in e) fallback = String((e as { message?: unknown }).message);
-        if ('cause' in e && isBackendAuthErrorPayload((e as { cause?: unknown }).cause)) code = (e as any).cause?.error;
+        code = getAuthErrorCode(e);
       }
       const mapped = mapAuthError(code || 'UNKNOWN', fallback);
       set({ status: 'error', errorCode: mapped.code, errorMessage: mapped.message });
