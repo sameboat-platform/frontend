@@ -15,14 +15,54 @@ interface RawUser { id: string; email: string; roles?: string[]; displayName?: s
 function isRawUser(v: unknown): v is RawUser {
   return !!v && typeof v === 'object' && 'id' in v && 'email' in v;
 }
-function normalizeUser(u: { id: string; email: string; roles?: unknown; role?: unknown; displayName?: unknown; name?: unknown }): RawUser {
-  const roles = !u.roles && typeof (u as any).role === 'string'
-    ? [(u as any).role as string]
-    : Array.isArray(u.roles)
-      ? (u.roles as unknown[]).filter(r => typeof r === 'string') as string[]
-      : typeof u.roles === 'string' ? [u.roles] : undefined;
-  return { id: u.id as string, email: u.email as string, roles, displayName: (typeof u.displayName === 'string' ? u.displayName : (typeof (u as any).name === 'string' ? (u as any).name : null)) };
+
+type RawUser = {
+  id: string;
+  email: string;
+  roles?: string[];
+  displayName?: string | null;
+};
+
+const isString = (v: unknown): v is string => typeof v === 'string';
+
+const asStringArray = (v: unknown): string[] | undefined => {
+  if (Array.isArray(v)) return (v as unknown[]).filter(isString) as string[];
+  if (isString(v)) return [v];
+  return undefined;
+};
+
+const normalizeRoles = (u: { roles?: unknown; role?: unknown }): string[] | undefined =>
+  asStringArray(u.roles) ?? (isString(u.role) ? [u.role] : undefined);
+
+const resolveDisplayName = (u: { displayName?: unknown; name?: unknown }): string | null =>
+  (isString(u.displayName) ? u.displayName : isString(u.name) ? u.name : null);
+
+const isRawUser = (v: unknown): v is RawUser =>
+  !!v &&
+  typeof v === 'object' &&
+  isString((v as any).id) &&
+  isString((v as any).email);
+
+function normalizeUser(u: {
+  id: unknown; email: unknown; roles?: unknown; role?: unknown; displayName?: unknown; name?: unknown;
+}): RawUser {
+  return {
+    id: String(u.id),
+    email: String(u.email),
+    roles: normalizeRoles(u),
+    displayName: resolveDisplayName(u),
+  };
 }
+
+function extractRawUser(v: unknown): RawUser | undefined {
+  if (isRawUser(v)) return normalizeUser(v);
+  if (v && typeof v === 'object' && 'user' in (v as Record<string, unknown>)) {
+    const inner = (v as Record<string, unknown>).user as unknown;
+    if (isRawUser(inner)) return normalizeUser(inner);
+  }
+  return undefined;
+}
+
 function extractRawUser(v: unknown): RawUser | undefined {
   if (isRawUser(v)) return normalizeUser(v as any);
   if (v && typeof v === 'object' && 'user' in (v as Record<string, unknown>)) {
