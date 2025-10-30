@@ -32,7 +32,7 @@ export function AuthEffects() {
   // Visibility-based refresh with 30s cooldown
   useEffect(() => {
     if (typeof document === 'undefined') return;
-  const onVisibility = () => {
+    const onVisibility = () => {
       try {
         const visible = document.visibilityState === 'visible';
         const ok = shouldRefreshOnVisibility({
