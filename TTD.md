@@ -94,6 +94,11 @@ These provide a stable coverage floor with minimal maintenance.
 Add new sections here as areas expand (e.g., Testing, Performance, Accessibility).
 
 
+## Post-MVP
+
+- Add an end-to-end integration test for the actual visibility event + 30s cooldown flow using a real browser runner (e.g., Playwright). The browser environment provides a faithful visibility lifecycle and reliable time control, making this scenario deterministic.
+
+
 ### Potential workflow--for badge coverage updating:
 
 name: Update Badge

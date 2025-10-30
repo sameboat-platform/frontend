@@ -41,7 +41,7 @@ function tryParseErrorPayload(text: string): ErrorPayload | undefined {
 // Returns parsed JSON or text response. Caller must type-assert T as needed.
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     const url = buildUrl(path);
-    if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
+    if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_AUTH === 'true') {
         // concise dev log (avoid dumping the whole body as an object wrapper)
         console.debug(url);
     }
@@ -53,14 +53,14 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
             ...(init.headers || {}),
         },
     });
-    if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
+    if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_AUTH === 'true') {
         // concise dev log (avoid dumping the whole body as an object wrapper)
         console.log(`[api] ${init.method || "GET"} ${url} -> ${res.status}`);
     }
     const isJson = (res.headers.get("content-type") || "").includes(
         "application/json"
     );
-    if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
+    if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_AUTH === 'true') {
         console.debug("[api] request:", { url, init });
     }
     if (!res.ok) {
@@ -84,7 +84,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
         return text as unknown as T;
     }
     try {
-        if (import.meta.env.DEV && import.meta.env.VITE_API_DEBUG_AUTH) {
+        if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_AUTH === 'true') {
             console.debug("[api] response JSON:");
         }
         return (await res.json()) as T;

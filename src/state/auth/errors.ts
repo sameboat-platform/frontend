@@ -6,13 +6,13 @@ import type { AuthErrorCode } from './types';
  * Maps backend error codes to user-friendly messages.
  */
 const FRIENDLY: Record<AuthErrorCode, string> = {
-    BAD_CREDENTIALS: 'Email or password is incorrect.',
-    ACCOUNT_LOCKED: 'Your account is locked. Check your email and/or contact support.',
-    USER_DISABLED: 'Your account is disabled. Please contact support.',
-    RATE_LIMITED: 'Too many attempts. Please wait and try again.',
-    NETWORK: 'Network error. Check your connection and try again.',
-    SERVER_ERROR: 'Server error. Please try again in a moment.',
-    UNKNOWN: 'Unexpected error. Please retry.',
+  BAD_CREDENTIALS: 'Email or password is incorrect.',
+  ACCOUNT_LOCKED: 'Your account is locked. Check your email and/or contact support.',
+  USER_DISABLED: 'Your account is disabled. Please contact support.',
+  RATE_LIMITED: 'Too many attempts. Please wait and try again.',
+  NETWORK: 'Something went wrong. Please try again.',
+  SERVER_ERROR: 'Something went wrong. Please try again.',
+  UNKNOWN: 'Unexpected error. Please retry.',
 };
 
 /**
