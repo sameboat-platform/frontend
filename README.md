@@ -49,7 +49,7 @@ src/
   main.tsx          # Entry – mounts <App />
   App.tsx           # App shell (wraps providers + routes)
     routes/           # Route configuration + ProtectedRoute + layout transitions
-    state/auth/       # Auth context store (bootstrap, login/logout/refresh, error mapping)
+    state/auth/       # Auth store (Zustand) + useAuth adapter + AuthEffects (bootstrap/visibility)
     pages/            # Page-level React components
     components/       # Reusable UI bits (AuthForm, FormField, Footer, UserSummary, RuntimeDebugPanel, GlobalRouteTransition)
     lib/              # Shared utilities (api.ts, health.ts)
@@ -163,7 +163,7 @@ Important: Do NOT call bare `/me` from the client. Always use `/api/me` to avoid
 
 ## Authentication System
 
-The authentication layer uses a React Context (`AuthProvider`) that performs exactly one bootstrap fetch to `/api/me` to hydrate the session user (cookie-based). React 19 StrictMode double-mount is neutralized via a module-level flag ensuring `refresh()` is not called twice.
+The authentication layer uses a Zustand store exposed via a stable `useAuth()` hook. A thin `AuthProvider` wrapper mounts `AuthEffects`, which performs exactly one bootstrap fetch to `/api/me` to hydrate the session user (cookie-based) and listens for `visibilitychange` to refresh with a 30s cooldown. React 19 StrictMode double-mount is handled by a module-level guard inside `AuthEffects` to avoid duplicate bootstrap.
 
 ### Bootstrap flow (why you see `/api/me` at startup)
 
@@ -176,7 +176,7 @@ The authentication layer uses a React Context (`AuthProvider`) that performs exa
 
 ### Key Points
 
--   Provider: `AuthProvider` (`src/state/auth/auth-context.tsx`) – wraps the router.
+-   Store + effects: `src/state/auth/store.ts`, `src/state/auth/effects.tsx` with a thin wrapper provider at `src/state/auth/auth-context.tsx` (mounts effects).
 -   Actions: `login`, `register`, `refresh`, `logout`, `clearError`.
 -   Status: `status` cycles through `idle | loading | authenticated | error` while `bootstrapped` gates initial redirects.
 -   Error Mapping: Server error payload (`{ error, message }`) is normalized in `errors.ts` to friendly messages (e.g. `BAD_CREDENTIALS`, `EMAIL_EXISTS`, `VALIDATION_ERROR`).
@@ -197,9 +197,9 @@ The authentication layer uses a React Context (`AuthProvider`) that performs exa
 3. Post-bootstrap 401s (e.g. expiry): surface mapped error and allow UI to re-auth.
 4. A fail-safe timeout flips `bootstrapped` after 5s if the network call hangs.
 
-### Future Store Swap
+### Store Contract Stability
 
-Because components import only `useAuth()` (wrapper), migrating to Zustand requires only replacing its internals with a store hook matching the same return contract.
+Components import only `useAuth()` (adapter). Internals can evolve (selectors, middleware) without changing call sites, as long as the returned shape remains the same. See RFC: `docs/rfcs/zustand-auth-store.md`.
 
 ## Runtime Debug Panel
 

@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Current scope: Vite + React 19 SPA with incremental Chakra UI adoption, auth context, protected routing, health telemetry, and a dev runtime debug panel.
+Current scope: Vite + React 19 SPA with incremental Chakra UI adoption, auth store (Zustand), protected routing, health telemetry, and a dev runtime debug panel.
 
 Planning references:
 
@@ -22,7 +22,7 @@ Planning references:
 | -------------------------------------- | --------------------------------------------------------- |
 | `src/lib/api.ts`                       | JSON fetch helper (credentials included) + error parsing. |
 | `src/lib/health.ts`                    | Runtime type guard for health endpoint responses.         |
-| `src/state/auth/`                      | Auth context (bootstrap, login/register/logout, errors).  |
+| `src/state/auth/`                      | Auth store (Zustand) + `AuthEffects` (bootstrap/visibility) + adapter hook. |
 | `src/routes/`                          | Router config, `ProtectedRoute`, layout & transitions.    |
 | `src/components/RuntimeDebugPanel.tsx` | Dev overlay for auth + probe telemetry.                   |
 | `src/pages/Home.tsx`                   | Health check card, auth entry links, user summary.        |
@@ -60,7 +60,7 @@ Planning references:
 
 | Area             | Current                                  | Future Path                                    |
 | ---------------- | ---------------------------------------- | ---------------------------------------------- |
-| State management | React Context (auth)                     | Swap to Zustand keeping `useAuth()` contract   |
+| State management | Zustand store (auth)                     | Expand with selectors/derived state; keep `useAuth()` contract |
 | Animations       | Framer Motion (route + auth transitions) | Reduced motion toggle / granular variants      |
 | Telemetry        | Runtime debug panel (dev only)           | Expand to include latency, feature flags       |
 | Forms            | Chakra primitives                        | Extract form schema validation layer (Zod)     |
@@ -75,17 +75,20 @@ Planning references:
 
 Revisit as feature complexity increases.
 
-## Migration Note
+## Migration Notes
 
 Repository relocated: `ArchILLtect/sameboat-frontend` → `sameboat-platform/frontend`. Historical links may reference the former path.
 
+Authentication store migrated from a React Context to Zustand (see `docs/rfcs/zustand-auth-store.md`) while preserving the `useAuth` consumer API. A thin `AuthProvider` remains to mount `AuthEffects` near the root.
+
 ## Authentication Lifecycle (Summary)
 
-1. App mounts → `AuthProvider` runs guarded `refresh()` once (mitigates StrictMode double call).
+1. App mounts → `AuthEffects` runs guarded `refresh()` once (mitigates StrictMode double call).
 2. If `/api/me` returns user → state becomes `authenticated`.
 3. If 401 during bootstrap → treated as unauthenticated (no error yet); `bootstrapped` flips. Note: the browser devtools may still show a red 401 line in the Console/Network panel—this is expected and not an application error; the client handles it silently.
 4. Post-bootstrap auth failures (e.g., session expiry) set mapped error and revert user to null.
 5. `ProtectedRoute` waits for `bootstrapped` then decides redirect vs rendering child.
+6. `AuthEffects` listens to `visibilitychange` and refreshes when visible, not in-flight, and last fetch ≥ 30s.
 
 ## Runtime Debug Panel
 

@@ -85,6 +85,7 @@ These provide a stable coverage floor with minimal maintenance.
     
 ### Dependency / Security Automation
 
+-   // TODO: Update to a version that supports React 19.x when available. Current version may have peer dependency mismatch with React 19.
 -   Create Dependabot config groups separating critical/security deps from test/tooling deps (distinct PR labels & visibility).
 -   Add CI job for dependency audit (e.g. `npm audit --audit-level=moderate` or Snyk) highlighting severity delta between main and PR.
 -   Add GitHub Action guard: fail Dependabot PR if it modifies > N (configurable) devDependencies without a CHANGELOG entry under Security or Internal.

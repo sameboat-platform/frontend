@@ -32,11 +32,11 @@ const normalizeRoles = (u: { roles?: unknown; role?: unknown }): string[] | unde
 const resolveDisplayName = (u: { displayName?: unknown; name?: unknown }): string | null =>
   (isString(u.displayName) ? u.displayName : isString(u.name) ? u.name : null);
 
-const isRawUser = (v: unknown): v is RawUser =>
-  !!v &&
-  typeof v === 'object' &&
-  isString((v as any).id) &&
-  isString((v as any).email);
+const isRawUser = (v: unknown): v is RawUser => {
+  if (!v || typeof v !== 'object') return false;
+  const obj = v as Record<string, unknown>;
+  return isString(obj.id) && isString(obj.email);
+};
 
 function normalizeUser(u: {
   id: unknown; email: unknown; roles?: unknown; role?: unknown; displayName?: unknown; name?: unknown;

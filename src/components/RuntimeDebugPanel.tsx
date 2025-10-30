@@ -22,9 +22,12 @@ type ProbeHistoryEntry = NetProbe;
 // avoid running any hooks/effects in production. Also gated at the render
 // site (App.tsx) using isDev() for extra safety and tree-shaking.
 export default function RuntimeDebugPanel() {
-  // Hard guard: never run any hooks/effects in production
-  // This executes before any hooks are declared, so no side-effects in prod.
+  // Hard guard: avoid rendering hook-using inner component in production.
   if (isProd()) return null;
+  return <DebugPanelInner />;
+}
+
+function DebugPanelInner() {
   const { user, status, errorCode, errorMessage, bootstrapped, lastFetched, refresh } = useAuth();
   const [renderTs, setRenderTs] = useState(Date.now());
 
