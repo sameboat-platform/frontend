@@ -70,7 +70,7 @@ function getAuthErrorCode(e: unknown): string | undefined {
   return undefined;
 }
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthStore>()((set, get) => ({
   // state
   user: null,
   status: 'idle',
@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (!bootstrapped) {
         set({ user: null, status: 'idle', errorCode: undefined, errorMessage: undefined });
       } else {
-        let code: string | undefined
+        let code: string | undefined;
         let fallback: string | undefined;
         if (e && typeof e === 'object') {
           if ('message' in e) fallback = String((e as { message?: unknown }).message);
@@ -140,7 +140,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await get().refresh();
       return true;
     } catch (e) {
-      let code: string | undefined
+      let code: string | undefined;
       let fallback: string | undefined;
       if (e && typeof e === 'object') {
         if ('message' in e) fallback = String((e as { message?: unknown }).message);
@@ -167,7 +167,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await get().refresh();
       return true;
     } catch (e) {
-      let code: string | undefined
+      let code: string | undefined;
       let fallback: string | undefined;
       if (e && typeof e === 'object') {
         if ('message' in e) fallback = String((e as { message?: unknown }).message);
