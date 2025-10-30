@@ -8,7 +8,7 @@
 ## Architecture/Files Touched (Implemented)
 
 - `src/lib/api.ts` – fetch wrapper with `credentials: 'include'`, debug gated by `VITE_DEBUG_AUTH='true'`.
-- `src/state/auth/auth-context.tsx` – React Context auth store with: intendedPath, inFlight concurrency guard, error mapping, one-time bootstrap, and visibility-based refresh with 30s cooldown.
+- `src/state/auth/` – Auth store powered by Zustand with a stable `useAuth()` adapter and `AuthEffects` side-effects component; includes intendedPath, inFlight concurrency guard, error mapping, one-time bootstrap with 5s fail-safe, and visibility-based refresh with 30s cooldown.
 - `src/routes/ProtectedRoute.tsx` – auth guard (stores full intended path; no content flash after bootstrap).
 - `src/pages/Login.tsx` – login form, error mapping, redirect to intended path.
 - `src/pages/Me.tsx` – minimal signed-in state display.
@@ -41,8 +41,8 @@
 1) HTTP client with cookies
 - [x] `src/lib/api.ts` ensures `credentials: 'include'`; debug logs only when `VITE_DEBUG_AUTH='true'`.
 
-2) Auth store (React Context for MVP)
-- [x] `src/state/auth/auth-context.tsx` with `user`, `status`, `error`, `intendedPath`, `inFlight`, and actions `login`, `logout`, `refresh`, `register`, `setIntendedPath`.
+2) Auth store (Zustand + adapter, parity with MVP)
+- [x] `src/state/auth/store.ts` + `src/state/auth/useAuth.ts` + `src/state/auth/auth-context.tsx` (thin wrapper) with `user`, `status`, `error`, `intendedPath`, `inFlight`, and actions `login`, `logout`, `refresh`, `register`, `setIntendedPath`.
 - [x] Concurrency guard to prevent overlapping auth requests.
 - [x] Error mapping normalized and tested; friendly messages aligned.
 
@@ -60,8 +60,8 @@
 - [x] Gate auth/API logs behind `VITE_DEBUG_AUTH='true'` and `VITE_DEBUG_AUTH_BOOTSTRAP='true'`.
 - [x] Added a console hygiene test to ensure no warn/error during happy bootstrap.
 
-7) Session freshness on tab visibility
-- [x] `visibilitychange` listener triggers `refresh()` when visible, not in-flight, and last fetch ≥ 30s ago (pure helper `shouldRefreshOnVisibility`).
+- 7) Session freshness on tab visibility
+- [x] `visibilitychange` listener (in `AuthEffects`) triggers `refresh()` when visible, not in-flight, and last fetch ≥ 30s ago (pure helper `shouldRefreshOnVisibility`).
 - [x] Unit-tested the cooldown logic in isolation to keep tests deterministic.
 
 8) Error handling UX
@@ -108,11 +108,9 @@
 
 - Add an end-to-end integration test for the actual visibility event + 30s cooldown flow using a real browser runner (e.g., Playwright). The browser environment provides a faithful visibility lifecycle and reliable time control, making this scenario deterministic.
 
-## Looking ahead: Zustand migration RFC
+## Completion note: Zustand migration
 
-- The MVP uses a React Context store with a stable `useAuth`-style API. The RFC will propose swapping internals to Zustand while keeping the hook API stable for consumers, covering:
-  - Store shape parity: `user`, `status`, `error`, `intendedPath`, `inFlight`, and actions.
-  - Migration plan: introduce `useAuth` thin wrapper over Zustand selector; provide codemod/guide if needed.
-  - Concurrency and bootstrap semantics: preserve with an action queue or middleware in Zustand.
-  - Testing strategy: keep tests green by reusing the same public API; add a few store-specific tests.
-  - Rollout: draft PR behind a feature branch; no behavioral change expected.
+- Implemented per RFC: `docs/rfcs/zustand-auth-store.md`.
+- `useAuth` public contract preserved; consumers unchanged.
+- `AuthProvider` remains as a thin wrapper to mount `AuthEffects`.
+- Tests remained green; console hygiene preserved.
