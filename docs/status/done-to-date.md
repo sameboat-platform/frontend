@@ -1,6 +1,29 @@
+# SameBoat – Progress Summary (through 10‑30-2025)
+
+This snapshot captures what’s shipped through frontend v0.3.0 and the current backend status; Week 5 focus is stories v1 and minimal profile edit.
+
+## Frontend
+- Releases:
+    - v0.1.0 (2025‑10‑02) – initial auth/pages/health, CI baseline.
+    - v0.2.0 (2025‑10‑04) – health stability, coverage pipeline, security policy.
+    - v0.3.0 (2025‑10‑30) – Zustand auth store + effects, visibility‑based session refresh (30s cooldown), intendedPath preservation, dependency‑audit workflow, bundle analyzer, docs sweep.
+- Health aligned to `/actuator/health`; ProtectedRoute preserves full intended path; tests and build/lint pass on main; security audit 0 vulns at release time.
+
+## Backend (high‑level)
+- Java 21 + Spring Boot 3.5.x; Flyway migrations; Postgres (Neon) in prod.
+- Auth endpoints: `POST /api/auth/{login,register,logout}` and `GET /api/me` for session bootstrap (cookie `SBSESSION`).
+- Users API: `GET /api/users/{id}`, `PATCH /api/users/{id}`; Actuator health at `/actuator/health`.
+- Tests: service + controller; Jacoco ≥ 70%.
+
+## Week 5 focus (next)
+- Frontend: Stories feed `/stories`, create `/stories/new` with spoiler shields; profile edit (name/role/bio) via `PATCH /api/me`.
+- Backend: Stories endpoints (`GET /api/stories`, `POST /api/stories`, `GET /api/stories/{id}`) and extend profile fields.
+
+Links: Frontend release v0.3.0 → https://github.com/sameboat-platform/frontend/releases/tag/v0.3.0; Week 5 plan → `docs/weekly-reports/week-5-frontend-plan.md`.
+
 # SameBoat Backend – Progress Summary
 
-## Completed Work (as of [date])
+## Completed Work (10-08-2025)
 
 ### 1. Project Setup
 - **Tech stack selected:** Java 21, Spring Boot 3.5.x, Maven, PostgreSQL (Neon for prod, H2/Testcontainers for tests).
