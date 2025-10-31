@@ -6,7 +6,7 @@
 
 ## 🎯 Goal (Week 5 – Stories MVP)
 Deliver minimal UI + client code so an **authenticated** user can:
-- create a text story (1–1000 chars),
+- create a text story (50–1000 chars),
 - view a recent feed (paged),
 - view their own stories,
 - delete their own stories.
