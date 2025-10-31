@@ -32,7 +32,7 @@ Reference files that likely already exist:
 ---
 
 ## 🔌 Backend Contracts (assumed per Week 5 BE plan)
-- `POST /api/stories` `{ content }` → **201** `{ id, authorId, content, createdAt, updatedAt? }`
+- `POST /api/stories` `{ title, content, triggers }` → **201** `{ id, authorId, title, content, triggers, createdAt, updatedAt? }`
 - `GET  /api/stories?limit=20&before=<ISO>` → **200** `Story[]` (recent first)
 - `GET  /api/me/stories` → **200** `Story[]` (current user’s stories, recent first)
 - `DELETE /api/stories/{id}` → **204** on owner; **403** not owner; **404** unknown
