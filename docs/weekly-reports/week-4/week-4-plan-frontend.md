@@ -5,6 +5,8 @@
 
 ---
 
+> Release status: v0.3.0 shipped on 2025-10-30. See tag and notes: https://github.com/sameboat-platform/frontend/releases/tag/v0.3.0. Milestone “v0.3.0” is closed; “v0.3.1” (patches) and “v0.4.0” (next minor) are open.
+
 ## Architecture/Files Touched (Implemented)
 
 - `src/lib/api.ts` – fetch wrapper with `credentials: 'include'`, debug gated by `VITE_DEBUG_AUTH='true'`.
@@ -114,3 +116,4 @@
 - `useAuth` public contract preserved; consumers unchanged.
 - `AuthProvider` remains as a thin wrapper to mount `AuthEffects`.
 - Tests remained green; console hygiene preserved.
+ - Release v0.3.0 cut and tagged; post‑release triage completed.
