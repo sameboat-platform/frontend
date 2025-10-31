@@ -93,7 +93,7 @@ Risks & Mitigations
 - Dispatching `visibilitychange` in real browsers may be gated—inject a visibility getter shim if needed or use multi‑page focus handoff.
 - Time manipulation must be consistent across app and test; prefer overriding `Date.now()` early via `addInitScript`.
 
-Estimati on
+Estimation
 - Small (0.5–1d) including CI wiring.
 
 Definition of Done
