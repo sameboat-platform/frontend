@@ -4,7 +4,7 @@ Project: Vite + React 19 + TypeScript (strict), using SWC React plugin. Auth sta
 
 Big picture
 
--   SPA bootstrapped by Vite. Entry `src/main.tsx` mounts `src/App.tsx` into `#root` in `index.html`.
+-   SPA bootstrapped by Vite. Entry `src/main.tsx` mounts `src/App.tsx` into `root` in `index.html`.
 -   Build is type-first: `npm run build` executes `tsc -b` before `vite build`. CI fails on any TS errors.
 -   Flat ESLint config with React Hooks and React Refresh rules; focus on `.ts/.tsx` files; `dist/` ignored.
 -   ESM-only repository (`"type": "module"`, TS `moduleResolution: bundler`, `verbatimModuleSyntax: true`). Prefer `import type` for types.

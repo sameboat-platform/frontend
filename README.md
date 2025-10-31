@@ -1,5 +1,6 @@
 [![Frontend CI](https://github.com/sameboat-platform/frontend/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/sameboat-platform/frontend/actions/workflows/frontend-ci.yml)
 [![Release](https://img.shields.io/github/v/tag/sameboat-platform/frontend?label=release&sort=semver)](https://github.com/sameboat-platform/frontend/releases)
+[![Changelog 0.3.0](https://img.shields.io/badge/changelog-0.3.0-blue)](CHANGELOG.md#030---2025-10-29)
 [![License](https://img.shields.io/github/license/sameboat-platform/frontend.svg)](LICENSE)
 [![Dependencies](https://img.shields.io/github/actions/workflow/status/sameboat-platform/frontend/frontend-ci.yml?label=build)](https://github.com/sameboat-platform/frontend/actions)
 [![Coverage](./.github/badges/coverage.svg)](https://github.com/sameboat-platform/frontend/actions/workflows/coverage-badge.yml)
