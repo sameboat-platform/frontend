@@ -73,6 +73,8 @@ Expose thin helpers (all `credentials: 'include'`):
 ```ts
 type Story = { id: string; authorId: string; content: string; createdAt: string; updatedAt?: string | null };
 
+// Type definition inconsistency: this minimal Story type lacks title and triggers fields that are present in week-5-frontend-plan.md lines 51-62. This will cause type mismatches when implementing the components described in lines 54-68 which expect these fields.
+
 export async function createStory(content: string): Promise<Story> {}
 export async function getFeed(params?: { limit?: number; before?: string }): Promise<Story[]> {}
 export async function getMyStories(): Promise<Story[]> {}
