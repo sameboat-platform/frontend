@@ -4,7 +4,7 @@ Each section below is a ready‑to‑copy issue template. Every issue includes t
 
 ---
 
-## 1) feat(stories): Types + client helpers (`src/lib/stories.ts`)
+## 77) feat(stories): Types + client helpers (`src/lib/stories.ts`)
 
 Labels: area:stories, type:feature, roadmap
 Milestone: v0.3.1
@@ -29,7 +29,7 @@ Notes / Links
 
 ---
 
-## 2) feat(stories): StoriesFeed page (`/stories`)
+## 78) feat(stories): StoriesFeed page (`/stories`)
 
 Labels: area:stories, type:feature, pages, roadmap
 Milestone: v0.3.1
@@ -55,7 +55,7 @@ Notes / Links
 
 ---
 
-## 3) feat(stories): StoryCreate page (`/stories/new`, protected)
+## 79) feat(stories): StoryCreate page (`/stories/new`, protected)
 
 Labels: area:stories, type:feature, pages, roadmap
 Milestone: v0.3.1
@@ -81,7 +81,7 @@ Notes / Links
 
 ---
 
-## 4) feat(stories): StoryCard + spoiler shield
+## 80) feat(stories): StoryCard + spoiler shield
 
 Labels: area:stories, type:feature, components, a11y, roadmap
 Milestone: v0.3.1
@@ -105,7 +105,7 @@ Notes / Links
 
 ---
 
-## 5) chore(routes): wire stories routes + guard `/stories/new`
+## 82) chore(routes): wire stories routes + guard `/stories/new`
 
 Labels: area:stories, type:chore, routes, roadmap
 Milestone: v0.3.1
@@ -127,7 +127,7 @@ Notes / Links
 
 ---
 
-## 6) feat(profile): minimal profile edit on `Me`
+## 83) feat(profile): minimal profile edit on `Me`
 
 Labels: area:profile, type:feature, pages, roadmap
 Milestone: v0.4.0
@@ -150,7 +150,7 @@ Notes / Links
 
 ---
 
-## 7) test(stories): StoriesFeed tests
+## 84) test(stories): StoriesFeed tests
 
 Labels: area:stories, type:test, typetest
 Milestone: v0.3.1
@@ -172,7 +172,7 @@ Notes / Links
 
 ---
 
-## 8) test(stories): StoryCreate tests
+## 85) test(stories): StoryCreate tests
 
 Labels: area:stories, type:test, typetest
 Milestone: v0.3.1
@@ -194,7 +194,7 @@ Notes / Links
 
 ---
 
-## 9) test(stories): StoryCard shield a11y tests
+## 86) test(stories): StoryCard shield a11y tests
 
 Labels: area:stories, type:test, a11y, typetest
 Milestone: v0.3.1
@@ -216,7 +216,7 @@ Notes / Links
 
 ---
 
-## 10) test(profile): Profile edit tests
+## 87) test(profile): Profile edit tests
 
 Labels: area:profile, type:test, typetest
 Milestone: v0.4.0
@@ -238,7 +238,7 @@ Notes / Links
 
 ---
 
-## 11) docs: CHANGELOG Unreleased entries for Stories v1 + Profile edit
+## 88) docs: CHANGELOG Unreleased entries for Stories v1 + Profile edit
 
 Labels: docs, type:chore
 Milestone: v0.4.0
@@ -261,7 +261,7 @@ Notes / Links
 
 ---
 
-## 12) a11y: Shield/button semantics review
+## 89) a11y: Shield/button semantics review
 
 Labels: a11y, type:chore, area:stories
 Milestone: v0.4.0
@@ -283,7 +283,7 @@ Notes / Links
 
 ---
 
-## 13) ci: gates remain green
+## 90) ci: gates remain green
 
 Labels: area:ci, type:chore
 Milestone: v0.3.1
