@@ -49,6 +49,11 @@ export default function Home() {
 
         <HealthCheckCard />
 
+        <Box>
+          <Heading size='md' mb={2}>Explore</Heading>
+          <Button as={RouterLink} to='/stories' colorScheme='blue' size='sm'>Browse Stories</Button>
+        </Box>
+
       {isDev() && user && <UserSummary />}
       </Stack>
     </Container>

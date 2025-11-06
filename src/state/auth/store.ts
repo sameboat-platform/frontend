@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import type { AuthStore } from './types';
 import { isBackendAuthErrorPayload, mapAuthError } from './errors';
-import { AUTH_IN_FLIGHT_ERROR } from './constants';
 import { api } from '../../lib/api';
 import { emit } from '../../lib/events';
 
@@ -94,8 +93,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   async refresh() {
-    // simple guard to avoid overlaps
-    if (get().inFlight) throw new Error(AUTH_IN_FLIGHT_ERROR);
+    // simple guard to avoid overlaps: silently ignore if another auth op is running
+    if (get().inFlight) return;
     set((s) => ({ inFlight: true, status: s.status === 'idle' ? 'loading' : s.status }));
     try {
       const data = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include' });
@@ -127,9 +126,10 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   async login(email: string, password: string) {
-    if (get().inFlight) throw new Error(AUTH_IN_FLIGHT_ERROR);
+    if (get().inFlight) return false;
     set({ inFlight: true, status: 'loading', errorCode: undefined, errorMessage: undefined });
     try {
+      // Primary request: attempt login
       const res = await api<unknown>(LOGIN_PATH, { method: 'POST', body: JSON.stringify({ email, password }), credentials: 'include' });
       const u = extractRawUser(res);
       if (u) {
@@ -137,9 +137,34 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
         emit('auth:login', { user: u });
         return true;
       }
-      await get().refresh();
-      return true;
+      // Some backends may not return a body; attempt explicit /api/me fetch using the new session
+      try {
+        const me = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include' });
+        const u2 = extractRawUser(me);
+        if (u2) {
+          set({ user: u2, status: 'authenticated', lastFetched: Date.now() });
+          emit('auth:login', { user: u2 });
+          return true;
+        }
+      } catch {
+        // ignore and fall through to mapped error handling below
+      }
+      // If still no user, treat as soft failure and map below
+      throw new Error('Login completed but user session not found');
     } catch (e) {
+      // Fallback: In some production setups a proxy/redirect can cause the POST to appear as a 400,
+      // even though the server created the session cookie. Try a defensive /api/me to recover.
+      try {
+        const me = await api<unknown>(ME_PATH, { method: 'GET', credentials: 'include' });
+        const u = extractRawUser(me);
+        if (u) {
+          set({ user: u, status: 'authenticated', lastFetched: Date.now() });
+          emit('auth:login', { user: u });
+          return true;
+        }
+      } catch {
+        // ignore; we will map the original error
+      }
       let code: string | undefined;
       let fallback: string | undefined;
       if (e && typeof e === 'object') {
@@ -155,16 +180,19 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   async register(email: string, password: string) {
-    if (get().inFlight) throw new Error(AUTH_IN_FLIGHT_ERROR);
+    if (get().inFlight) return false;
     set({ inFlight: true, status: 'loading', errorCode: undefined, errorMessage: undefined });
     try {
       const res = await api<unknown>(REGISTER_PATH, { method: 'POST', body: JSON.stringify({ email, password }), credentials: 'include' });
       const u = extractRawUser(res);
       if (u) {
+        // Some backends auto-login on register and return the user
         set({ user: u, status: 'authenticated', lastFetched: Date.now() });
         return true;
       }
-      await get().refresh();
+      // Many backends create the account without authenticating. Treat success as non-authenticated success.
+      // Do NOT call refresh() here; it may legitimately 401 and surface as an error.
+      set({ status: 'idle' });
       return true;
     } catch (e) {
       let code: string | undefined;
@@ -182,7 +210,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   async logout() {
-    if (get().inFlight) throw new Error(AUTH_IN_FLIGHT_ERROR);
+    if (get().inFlight) return;
     set({ inFlight: true, status: 'loading', errorCode: undefined, errorMessage: undefined });
     try {
       await api(LOGOUT_PATH, { method: 'POST', credentials: 'include' });
