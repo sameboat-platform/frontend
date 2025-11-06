@@ -6,8 +6,8 @@ import Login from '../pages/Login';
 
 describe.skip('Login fallback – recover when POST /login errors but /me succeeds', () => {
   it('logs in via /api/me after POST error and navigates to /me', async () => {
-    const g = globalThis as unknown as { fetch: typeof fetch };
-    const originalFetch = g.fetch;
+      const g = globalThis as unknown as { fetch: typeof fetch };
+      const originalFetch = g.fetch;
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       const method = (init?.method || 'GET').toString().toUpperCase();
       if (url.toString().endsWith('/api/auth/login') && method === 'POST') {

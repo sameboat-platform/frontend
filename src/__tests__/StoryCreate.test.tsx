@@ -35,8 +35,8 @@ describe('StoryCreate', () => {
       </MemoryRouter>
     );
 
-  fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Hello' } });
-  fireEvent.change(screen.getByRole('textbox', { name: /content/i }), { target: { value: 'World' } });
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Hello' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /content/i }), { target: { value: 'World' } });
     fireEvent.click(screen.getByRole('button', { name: /publish/i }));
 
     await waitFor(() => {

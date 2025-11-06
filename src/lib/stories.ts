@@ -40,7 +40,7 @@ export function isTrigger(x: unknown): x is Trigger {
 }
 
 function isString(x: unknown): x is string {
-  return typeof x === "string" && x.length >= 0;
+  return typeof x === "string";
 }
 
 export function isStory(x: unknown): x is Story {

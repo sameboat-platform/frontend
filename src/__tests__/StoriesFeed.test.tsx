@@ -39,8 +39,8 @@ describe('StoriesFeed', () => {
     await waitFor(() => {
       expect(screen.getByText('Flagged')).toBeInTheDocument();
     });
-  // Chakra's Button as Link renders as an anchor element
-  expect(screen.getByRole('link', { name: /create a story/i })).toBeInTheDocument();
+    // Chakra's Button as Link renders as an anchor element
+    expect(screen.getByRole('link', { name: /create a story/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reveal story content/i })).toBeInTheDocument();
   });
 
