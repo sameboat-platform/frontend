@@ -6,7 +6,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- Stories MVP UI:
+	- Public feed route (`/stories`) rendering `StoryCard` items with a simple trigger shield and badges.
+	- Protected create route (`/stories/new`) with Chakra form (title, content, optional trigger checkboxes) posting via `createStory`.
+	- `StoryCard` component with Reveal flow for content when triggers exist.
+
+### Documentation
+- RFC: Stories – Triggers, Shields, and AI-assisted Content Guard (`docs/rfcs/stories-content-guard.md`).
+
+### Tests
+- Added tests for `StoryCard` reveal behavior, `StoriesFeed` load + shield presence, and `StoryCreate` form submission.
+
+### Fixed
+- Auth: Login/Register flow resilience
+	- Treat successful registration (2xx without body) as success without auto‑login; avoid immediate `/api/me` call that produced an error banner.
+	- Harden login to recover when POST `/api/auth/login` is reported as 400 by a proxy even though the backend created a session; perform a defensive `/api/me` to finalize auth.
+	- Soften in‑flight guard to avoid unhandled rejections on rapid double‑submits.
 
 ## [0.3.0] - 2025-10-29
 

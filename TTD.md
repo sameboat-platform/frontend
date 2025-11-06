@@ -99,6 +99,27 @@ Add new sections here as areas expand (e.g., Testing, Performance, Accessibility
 
 - Add an end-to-end integration test for the actual visibility event + 30s cooldown flow using a real browser runner (e.g., Playwright). The browser environment provides a faithful visibility lifecycle and reliable time control, making this scenario deterministic.
 
+### Auth polish: post-register redirect + email verification
+
+- Post‑register redirect to Login with banner
+  - Change Register flow to always route to `/login` if no session cookie is present after successful registration.
+  - Show a dismissible banner on `/login`: "Account created — please sign in" (variant: info/success).
+  - Preserve `intendedPath` behavior: if user came from a protected page, keep that destination for after the subsequent login.
+  - Acceptance:
+    - Register returns 2xx with no body → user lands on `/login` with banner; no error alert shown.
+    - If backend auto‑logs in and returns user (or cookie), skip banner and navigate to intended path (or `/me`).
+
+- Email verification (minimal viable)
+  - Backend: issue a verification token and email on registration; add endpoints: `POST /api/auth/resend-verification`, `GET /api/auth/verify?token=...` (shape TBD in backend doc).
+  - Frontend:
+    - Add a lightweight `/verify` page to consume token and show success/failure state.
+    - On login attempt for an unverified account, surface a friendly banner: "Please verify your email to continue" with a "Resend link" action (calls resend endpoint).
+    - During registration completion, optionally show a "Check your email" screen with a "Open email app" convenience link.
+  - Acceptance:
+    - Visiting `/verify?token=...` shows verified state and a button to continue to login.
+    - Unverified login path shows banner and allows resend; once verified, login proceeds normally.
+  - Nice‑to‑have (later): throttle resend with UX feedback, include support contact fallback.
+
 
 ### Potential workflow--for badge coverage updating:
 
